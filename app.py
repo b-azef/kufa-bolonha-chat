@@ -2,43 +2,45 @@ import streamlit as st
 from google import genai
 import sqlite3
 
-# 1. إعدادات الصفحة والهوية البصرية المحسنة
+# 1. إعدادات الصفحة والهوية البصرية المحسنة فائقة الجمال
 st.set_page_config(page_title="مساعد جامعة الكوفة الذكي", page_icon="📊", layout="wide")
 
-# حقن CSS احترافي ومضمون لتغيير شكل فقاعات الشات لتشبه الإنستغرام تماماً
 st.markdown("""
 <style>
     /* تحسين الخلفية العامة ومساحة العمل */
-    .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
+    .stApp { background-color: #f8fafc !important; }
     
-    /* استهداف فقاعة رسالة المستخدم وتعديلها */
+    /* تنسيق فقاعات الشات العامة لجعلها انسيابية ومدورة الحواف */
     div[data-testid="stChatMessage"] {
-        border-radius: 12px !important;
-        padding: 12px !important;
-        margin-bottom: 10px !important;
+        border-radius: 20px !important;
+        padding: 15px !important;
+        margin-bottom: 12px !important;
+        max-width: 80% !important;
     }
     
-    /* تصميم رسالة المساعد: تدرج بنفسجي إلى أزرق نيون ساحر ونصوص بيضاء واضحة */
+    /* تصميم رسالة المساعد: تدرج إنستغرام الساحر الحقيقي (بنفسجي إلى أزرق نيون رائع) */
     div[data-testid="stChatMessageAssistant"] {
         background: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%) !important;
         color: white !important;
+        margin-right: auto !important; /* دفع رسالة البوت لجهة اليمين */
         box-shadow: 0 4px 15px rgba(168, 85, 247, 0.2);
     }
     
-    /* إجبار النص داخل رسالة البوت على اللون الأبيض */
+    /* إجبار النص داخل رسالة البوت على اللون الأبيض الواضح */
     div[data-testid="stChatMessageAssistant"] p, div[data-testid="stChatMessageAssistant"] span {
         color: white !important;
         font-size: 16px !important;
         font-weight: 500 !important;
     }
 
-    /* تصميم رسالة المستخدم: رمادي ناعم ومريح */
+    /* تصميم رسالة المستخدم: رمادي ناعم ونظيف جداً */
     div[data-testid="stChatMessageUser"] {
-        background-color: #f0f2f6 !important;
-        color: #1e293b !important;
+        background-color: #e2e8f0 !important;
+        color: #0f172a !important;
+        margin-left: auto !important; /* دفع رسالة المستخدم لجهة اليسار */
     }
     
-    /* تنسيق اللوحة الجانبية لجامعة الكوفة */
+    /* تنسيق اللوحة الجانبية لجامعة الكوفة لتكون فخمة ومظلمة */
     section[data-testid="stSidebar"] {
         background-color: #0f172a !important;
     }
@@ -48,10 +50,13 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 2. مفتاح الـ API والاتصال بـ Gemini 2.5
-# ملاحظة هندسية: إذا تم حظر المفتاح، يرجى استبداله بمفتاحك الخاص من Google AI Studio
-GEMINI_API_KEY = "AQ.Ab8RN6KL5W_7KvCkOSk7C99LvkrKdxnfdInP5LTVXOqUiLXzuQ"
-client = genai.Client(api_key=GEMINI_API_KEY)
+# 2. جلب مفتاح الـ API بأمان من الصندوق السري الذي ملأناه
+if "GEMINI_API_KEY" in st.secrets:
+    api_key_to_use = st.secrets["GEMINI_API_KEY"]
+else:
+    api_key_to_use = "مفتاح_احتياطي"
+
+client = genai.Client(api_key=api_key_to_use)
 
 # قاعدة بيانات الطلاب لمسار بولونيا بجامعة الكوفة
 conn = sqlite3.connect(':memory:', check_same_thread=False)
@@ -80,7 +85,7 @@ if "messages" not in st.session_state:
         {"role": "assistant", "content": "مرحباً بك يا أستاذ. أنا نظام المساعد الذكي لجامعة الكوفة، كيف يمكنني مساعدتك في جرد جداول الطلاب اليوم؟"}
     ]
 
-# عرض رسائل الشات بالتصميم المحدث الحين
+# عرض رسائل الشات بالتصميم المحدث
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
