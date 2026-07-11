@@ -2,35 +2,54 @@ import streamlit as st
 from google import genai
 import sqlite3
 
-# 1. إعدادات الهوية البصرية وتصميم إنستغرام الساحر
+# 1. إعدادات الصفحة والهوية البصرية المحسنة
 st.set_page_config(page_title="مساعد جامعة الكوفة الذكي", page_icon="📊", layout="wide")
 
+# حقن CSS احترافي ومضمون لتغيير شكل فقاعات الشات لتشبه الإنستغرام تماماً
 st.markdown("""
 <style>
-    .stApp { background-color: #f4f7fc; }
+    /* تحسين الخلفية العامة ومساحة العمل */
+    .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
     
-    /* رسالة المستخدم المودرن */
-    .stChatMessage[data-testid="stChatMessageUser"] {
-        background-color: #e0ebff !important;
-        border-radius: 15px 15px 4px 15px !important;
-        color: #1e3a8a !important;
+    /* استهداف فقاعة رسالة المستخدم وتعديلها */
+    div[data-testid="stChatMessage"] {
+        border-radius: 12px !important;
+        padding: 12px !important;
+        margin-bottom: 10px !important;
     }
     
-    /* تدرج إنستغرام الساحر (بنفسجي إلى أزرق نيون) لرسالة المساعد */
-    .stChatMessage[data-testid="stChatMessageAssistant"] {
-        background: linear-gradient(135deg, #a855f7, #3b82f6) !important;
-        border-radius: 15px 15px 15px 4px !important;
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+    /* تصميم رسالة المساعد: تدرج بنفسجي إلى أزرق نيون ساحر ونصوص بيضاء واضحة */
+    div[data-testid="stChatMessageAssistant"] {
+        background: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%) !important;
+        color: white !important;
+        box-shadow: 0 4px 15px rgba(168, 85, 247, 0.2);
     }
     
-    .stChatMessage[data-testid="stChatMessageAssistant"] p { color: white !important; font-size: 16px !important; font-weight: 500; }
+    /* إجبار النص داخل رسالة البوت على اللون الأبيض */
+    div[data-testid="stChatMessageAssistant"] p, div[data-testid="stChatMessageAssistant"] span {
+        color: white !important;
+        font-size: 16px !important;
+        font-weight: 500 !important;
+    }
+
+    /* تصميم رسالة المستخدم: رمادي ناعم ومريح */
+    div[data-testid="stChatMessageUser"] {
+        background-color: #f0f2f6 !important;
+        color: #1e293b !important;
+    }
     
-    section[data-testid="stSidebar"] { background-color: #1e3a8a !important; }
-    section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2, section[data-testid="stSidebar"] p { color: white !important; }
+    /* تنسيق اللوحة الجانبية لجامعة الكوفة */
+    section[data-testid="stSidebar"] {
+        background-color: #0f172a !important;
+    }
+    section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2, section[data-testid="stSidebar"] p, section[data-testid="stSidebar"] span {
+        color: #f8fafc !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # 2. مفتاح الـ API والاتصال بـ Gemini 2.5
+# ملاحظة هندسية: إذا تم حظر المفتاح، يرجى استبداله بمفتاحك الخاص من Google AI Studio
 GEMINI_API_KEY = "AQ.Ab8RN6KL5W_7KvCkOSk7C99LvkrKdxnfdInP5LTVXOqUiLXzuQ"
 client = genai.Client(api_key=GEMINI_API_KEY)
 
@@ -44,23 +63,24 @@ conn.commit()
 with st.sidebar:
     st.title("🏛️ جامعة الكوفة")
     st.subheader("مسار بولونيا الإداري")
-    st.write("💥 مساعد ذكي تفاعلي لفحص بيانات الطلاب والدرجات فورياً.")
+    st.write("مساعد ذكي تفاعلي لفحص بيانات الطلاب والدرجات فورياً.")
     st.markdown("---")
     st.markdown("""
-    <div style="background-color: #2563eb; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #60a5fa;">
-        <p style="margin: 0; font-weight: bold; font-size: 14px; color: white;">👨‍💻 مهندس النظام ومطوره:</p>
+    <div style="background-color: #1e3a8a; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #3b82f6;">
+        <p style="margin: 0; font-weight: bold; font-size: 14px; color: #ffffff;">👨‍💻 مهندس النظام ومطوره:</p>
         <p style="margin: 5px 0 0 0; font-size: 18px; color: #fef08a; font-weight: bold;">علي (أبو لينا)</p>
-        <p style="margin: 0; font-size: 12px; opacity: 0.9; color: white;">قسم الرياضيات - كلية العلوم</p>
+        <p style="margin: 0; font-size: 12px; opacity: 0.9; color: #cbd5e1;">قسم الرياضيات - كلية العلوم</p>
     </div>
-    """, unsafe_allow_html=True) # تم تصحيح الكلمة هنا أيضاً بنجاح
+    """, unsafe_allow_html=True)
 
-st.title("لوحة التحكم واستعلام البيانات الذكي 📊")
+st.title("لوحة استعلام البيانات والشات الذكي 📊")
 
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", "content": "مرحباً بك يا أستاذ. أنا نظام المساعد الذكي لجامعة الكوفة، كيف يمكنني مساعدتك في جرد جداول الطلاب اليوم؟"}
     ]
 
+# عرض رسائل الشات بالتصميم المحدث الحين
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
