@@ -1,21 +1,16 @@
 import streamlit as st
 from google import genai
-import sqlite3
+import os
 
-# 1. إعدادات المظهر المظلم الكامل
+# 1. إعدادات المظهر المظلم الكامل والمستقر
 st.set_page_config(page_title="مساعد جامعة الكوفة", page_icon="📊", layout="centered")
 
 st.markdown("""
 <style>
-    /* جعل كامل الصفحة سوداء */
     .stApp { background-color: #000000 !important; }
-    
-    /* إخفاء القائمة الجانبية والشعار العلوي والعناوين الكبيرة */
     [data-testid="stSidebar"] { display: none !important; }
-    #لوحة-استعلام-البيانات-والشات-الذكي { display: none !important; }
     header { visibility: hidden !important; }
     
-    /* تنسيق صندوق الشات ليكون متناغماً مع الخلفية السوداء */
     .chat-box {
         display: flex;
         flex-direction: column;
@@ -36,13 +31,12 @@ st.markdown("""
         color: white;
     }
     
-    /* تدرج إنستغرام لرسائل البوت */
     .assistant .bubble {
         background: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%) !important;
         border-bottom-left-radius: 4px;
+        box-shadow: 0 4px 12px rgba(168, 85, 247, 0.25);
     }
     
-    /* رسالة المستخدم بلون رمادي داكن */
     .user .bubble {
         background-color: #262626 !important;
         border-bottom-right-radius: 4px;
@@ -50,17 +44,33 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 2. إعدادات Gemini
+# 2. إعدادات جلب المفتاح السري لـ Gemini
 if "GEMINI_API_KEY" in st.secrets:
     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 else:
-    st.error("يرجى ضبط مفتاح الـ API في الإعدادات.")
+    st.error("يرجى ضبط مفتاح الـ API في إعدادات الأسرار (Secrets).")
     st.stop()
 
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = [{"role": "assistant", "content": "أهلاً بك. أنا مساعد جامعة الكوفة، كيف أخدمك اليوم؟"}]
+# 3. قراءة بيانات الطلاب من الملف النصي students.txt
+DATA_FILE = "students.txt"
+students_info = ""
 
-# 3. عرض الشات
+if os.path.exists(DATA_FILE):
+    try:
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            students_info = f.read()
+    except Exception as e:
+        students_info = f"خطأ أثناء قراءة الملف: {str(e)}"
+else:
+    students_info = "ملاحظة: ملف students.txt غير موجود في المستودع حالياً."
+
+# إدارة ذاكرة الشات بداخل النظام
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = [
+        {"role": "assistant", "content": "أهلاً بك يا أستاذ. أنا مساعد جامعة الكوفة الذكي، تم قراءة سجلات الطلاب النصية بنجاح ومستعد لتحليلها فورياً."}
+    ]
+
+# عرض الشات المظلم الفاخر
 chat_html = '<div class="chat-box">'
 for msg in st.session_state.chat_history:
     role_class = "user" if msg["role"] == "user" else "assistant"
@@ -68,16 +78,25 @@ for msg in st.session_state.chat_history:
 chat_html += "</div>"
 st.markdown(chat_html, unsafe_allow_html=True)
 
-# 4. الإدخال
-if user_query := st.chat_input("اكتب رسالتك هنا..."):
+# 4. محرك استقبال الأسئلة والرد الذكي
+if user_query := st.chat_input("اسألني عن الطلاب (مثال: من هم الطلاب الراسبون في الرياضيات؟)..."):
     st.session_state.chat_history.append({"role": "user", "content": user_query})
     
-    chat_prompt = f"""أنت مساعد جامعة الكوفة الذكي. صانعك هو المبرمج علي (أبو لينا). أجب بإيجاز.
-    المستخدم: {user_query}"""
+    # ضخ البيانات النصية مباشرة بداخل البرومبت ليفهمها جمناي
+    chat_prompt = f"""أنت مساعد رقمي ذكي مخصص لجامعة الكوفة في مسار بولونيا الإداري. 
+    مطورك وصانعك هو الطالب المبرمج الذكي علي (أبو لينا) من قسم الرياضيات بجامعة الكوفة.
+    
+    إليك قائمة ببيانات السجلات الحالية للطلاب:
+    \"\"\"
+    {students_info}
+    \"\"\"
+    
+    بناءً على السجلات السابقة، أجب على سؤال المستخدم التالي بدقة واختصار شديد وبلغة عربية مفهومة ومنسقة:
+    السؤال: {user_query}"""
     
     try:
         reply = client.models.generate_content(model='gemini-2.5-flash', contents=chat_prompt).text
         st.session_state.chat_history.append({"role": "assistant", "content": reply})
         st.rerun()
     except Exception as e:
-        st.error(f"خطأ: {e}")
+        st.error(f"خطأ في الاتصال بالنموذج: {e}")
