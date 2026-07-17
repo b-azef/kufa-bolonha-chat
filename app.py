@@ -1,7 +1,7 @@
 import streamlit as st
 from google import genai
 import pandas as pd
-import urllib.parse  # 💡 المكتبة السحرية لحل مشكلة الحروف العربية
+import urllib.parse
 
 # 1. إعدادات المظهر المظلم الكامل والمستقر
 st.set_page_config(page_title="مساعد جامعة الكوفة", page_icon="📊", layout="centered")
@@ -34,32 +34,26 @@ BASE_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:c
 @st.cache_data(ttl=10)
 def load_all_academic_data():
     try:
-        # تشفير الكلمات العربية لتجنب خطأ ASCII المتسبب في التوقف
         sheet_accounts_encoded = urllib.parse.quote("حسابات_الطلاب")
         sheet_math_encoded = urllib.parse.quote("math")
         sheet_prog_encoded = urllib.parse.quote("prog")
         
-        # قراءة البيانات بالنصوص النظيفة الصافية
         df_accounts = pd.read_csv(BASE_URL + sheet_accounts_encoded, dtype=str)
         df_math = pd.read_csv(BASE_URL + sheet_math_encoded, dtype=str)
         df_prog = pd.read_csv(BASE_URL + sheet_prog_encoded, dtype=str)
         
-        # تنظيف الفراغات المخفية من أسماء الأعمدة والقيم
         for df in [df_accounts, df_math, df_prog]:
             df.columns = df.columns.str.strip()
             if 'username' in df.columns:
                 df['username'] = df['username'].astype(str).str.strip()
         
-        # حذف الأعمدة المكررة للأسماء من صفحات المواد لمنع تداخل الأعمدة
         if 'student_name' in df_math.columns: df_math = df_math.drop(columns=['student_name'])
         if 'student_name' in df_prog.columns: df_prog = df_prog.drop(columns=['student_name'])
             
-        # دمج سحابي نظيف ومضمون بناءً على الرمز الأكاديمي الموحد
         final_df = pd.merge(df_accounts, df_math, on="username", how="left")
         final_df = pd.merge(final_df, df_prog, on="username", how="left")
         return final_df
-    except Exception as e:
-        # بيانات احتياطية آمنة جداً تمنع توقف التطبيق بالكامل
+    except:
         return pd.DataFrame([
             {"username": "ali123", "password": "123", "student_name": "علي حكمت حسن", "math_attendance": "3", "prog_attendance": "4"}
         ])
@@ -75,7 +69,6 @@ if not st.session_state.logged_in:
     st.markdown("<h2 style='text-align: center; color: white;'>🏛️ بوابة مسار بولونيا - جامعة الكوفة</h2>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #888;'>Log in</p>", unsafe_allow_html=True)
     
-    # نموذج متكامل يدعم الـ Enter بالكيبورد الخارجي
     with st.form("login_form", clear_on_submit=False):
         input_user = st.text_input("Username:").strip()
         input_pass = st.text_input("Password:", type="password").strip()
@@ -89,7 +82,7 @@ if not st.session_state.logged_in:
                 st.session_state.student_row = match.iloc[0].to_dict()
                 st.rerun()
             else:
-                st.error("❌ بيانات الدخول غير صحيحة. يرجى التأكد من الرمز السري.")
+                st.error("❌ بيانات الدخول غير صحيحة.")
     st.stop()
 
 # --- بعد تسجيل الدخول بنجاح ---
@@ -101,34 +94,36 @@ if st.button("تسجيل الخروج 🚪"):
     st.session_state.chat_history = None
     st.rerun()
 
-# 5. مستشعر فحص الغيابات الشامل عبر Gemini لجميع المواد السبعة فور الدخول
-if "chat_history" not in st.session_state:
-    with st.spinner("جاري قيام المساعد بفحص سجل غياباتك في جميع المواد..."):
+# 5. جلب الترحيب الذكي وضمان بقائه كقائمة دائماً لمنع الـ TypeError
+if "chat_history" not in st.session_state or st.session_state.chat_history is None:
+    st.session_state.chat_history = []  # تصفير آمن وقائي كقائمة
+    
+    with st.spinner("جاري فحص غياباتك عبر المساعد الذكي..."):
         init_prompt = f"""أنت المساعد الأكاديمي لجامعة الكوفة في مسار بولونيا. صانعك هو المبرمج البارع علي (أبو لينا) من قسم الرياضيات.
-        إليك ملف درجات وغيابات الطالب الحالي بالكامل من جداول الأساتذة:
-        \"\"\"
-        {str(current_student)}
-        \"\"\"
-        قم بتحليل غيابات الطالب في جميع المواد الموجودة في ملفه فوراً (مثل math_attendance و prog_attendance وغيرها)، واكتب له رسالة ترحيبية أولى ذكية تحتوي تلقائياً على إنذارات الغياب حسب هذه القواعد الصارمة:
-        - إذا كان الغياب في أي مادة يساوى أو أكبر من 3: قل له (إنذار أول 🟡) في مادة كذا.
-        - إذا كان الغياب في أي مادة يساوى أو أكبر من 5: قل له (تحذير ثانٍ 🟠) في مادة كذا.
-        - إذا كان الغياب في أي مادة يساوى أو أكبر من 7: قل له (تحذير نهائي وفصل 🔴) في مادة كذا.
-        اكتب الرد بأسلوب تربوي منسق جداً ومحفز، واذكر له إنذاراته بوضوح كـ نقاط إيموجي ملونة في أول الرسالة ليراها فوراً."""
+        بيانات الطالب الحالي: {str(current_student)}
+        قم بتحليل غيابات الطالب في جميع المواد (مثل math_attendance و prog_attendance)، واكتب له ترحيباً ذكياً أولياً يحتوي تلقائياً على إنذارات الغياب حسب هذه القواعد:
+        - غياب >= 3: (إنذار أول 🟡)
+        - غياب >= 5: (تحذير ثانٍ 🟠)
+        - غياب >= 7: (تحذير نهائي وفصل 🔴)
+        اكتب الرد بأسلوب تربوي منسق جداً، واذكر له إنذاراته كـ نقاط إيموجي ملونة في أول الرسالة ليراها."""
         
         try:
             first_reply = client.models.generate_content(model='gemini-2.5-flash', contents=init_prompt).text
-            st.session_state.chat_history = [{"role": "assistant", "content": first_reply}]
+            st.session_state.chat_history.append({"role": "assistant", "content": first_reply})
         except:
-            st.session_state.chat_history = [{"role": "assistant", "content": "أهلاً بك. أنا مساعدك الأكاديمي المطور، جاهز للمساعدة."}]
+            # الحل الدفاعي: البقاء كقائمة منظمة حتى لو سقط الاتصال بجمناي
+            st.session_state.chat_history.append({"role": "assistant", "content": "أهلاً بك في بوابة الكوفة. تعذر الاتصال بالمستشعر الذكي مؤقتاً، لكن لوحة التحكم محملة ببياناتك بسلام."})
 
-# عرض الشات المظلم
-chat_html = '<div class="chat-box">'
-for msg in st.session_state.chat_history:
-    role_class = "user" if msg["role"] == "user" else "assistant"
-    chat_html += f'<div class="msg-wrapper {role_class}"><div class="bubble">{msg["content"]}</div></div>'
-chat_html += "</div>"
-st.markdown(chat_html, unsafe_allow_html=True)
+# 6. عرض الشات المظلم (الآن آمن ومستقر 100%)
+if isinstance(st.session_state.chat_history, list):
+    chat_html = '<div class="chat-box">'
+    for msg in st.session_state.chat_history:
+        role_class = "user" if msg["role"] == "user" else "assistant"
+        chat_html += f'<div class="msg-wrapper {role_class}"><div class="bubble">{msg["content"]}</div></div>'
+    chat_html += "</div>"
+    st.markdown(chat_html, unsafe_allow_html=True)
 
+# 7. استقبال الأسئلة اللاحقة
 if user_query := st.chat_input("اسألني عن أي درجة أو غياب في المواد..."):
     st.session_state.chat_history.append({"role": "user", "content": user_query})
     chat_prompt = f"أنت المساعد الأكاديمي لجامعة الكوفة. بيانات الطالب: {str(current_student)}\nالسؤال: {user_query}"
