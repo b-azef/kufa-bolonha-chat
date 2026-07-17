@@ -26,8 +26,7 @@ else:
     st.error("يرجى ضبط مفتاح الـ API في إعدادات الأسرار.")
     st.stop()
 
-# 3. جلب وتجميع البيانات من روابط Google Sheet
-# 🚨 ضع الـ Sheet ID الخاص بملفك بين القوسين أدناه 🚨
+# 3. جلب وتجميع البيانات من روابط Google Sheet باستخدام الـ ID الخاص بك
 SHEET_ID = "1Z1snF8YttXoUu1TA35jD8cfbKtX4uZYK2-h2kOVDSTk"
 BASE_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet="
 
@@ -50,7 +49,7 @@ def load_all_academic_data():
         final_df = pd.merge(final_df, df_prog, on="username", how="left")
         return final_df
     except:
-        # بيانات احتياطية آمنة في حال لم يتم ربط الرابط الفعلي بشكل صحيح بعد
+        # بيانات احتياطية آمنة في حال وجود أي مشكلة مؤقتة في الاتصال
         return pd.DataFrame([
             {"username": "ali123", "password": "123", "student_name": "علي حكمت حسن", "math_attendance": 5, "prog_attendance": 2}
         ])
@@ -66,17 +65,22 @@ if not st.session_state.logged_in:
     st.markdown("<h2 style='text-align: center; color: white;'>🏛️ بوابة مسار بولونيا - جامعة الكوفة</h2>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #888;'>Log in</p>", unsafe_allow_html=True)
     
-    input_user = st.text_input("Username:")
-    input_pass = st.text_input("Password:", type="password")
-    
-    if st.button("Log in now"):
-        match = df_students[(df_students['username'].astype(str) == input_user) & (df_students['password'].astype(str) == input_pass)]
-        if not match.empty:
-            st.session_state.logged_in = True
-            st.session_state.student_row = match.iloc[0].to_dict()
-            st.rerun()
-        else:
-            st.error("❌ بيانات الدخول غير صحيحة.")
+    # 🌟 هنا الحل السحري للكيبورد الخارجي: وضع الحقول بداخل st.form
+    with st.form("login_form", clear_on_submit=False):
+        input_user = st.text_input("Username:")
+        input_pass = st.text_input("Password:", type="password")
+        
+        # زر الإرسال المخصص للنموذج (سيعمل تلقائياً عند ضغط Enter في الكيبورد الخارجي)
+        submit_button = st.form_submit_button("Log in now", use_container_width=True)
+        
+        if submit_button:
+            match = df_students[(df_students['username'].astype(str) == input_user) & (df_students['password'].astype(str) == input_pass)]
+            if not match.empty:
+                st.session_state.logged_in = True
+                st.session_state.student_row = match.iloc[0].to_dict()
+                st.rerun()
+            else:
+                st.error("❌ بيانات الدخول غير صحيحة.")
     st.stop()
 
 # --- بعد تسجيل الدخول بنجاح: واجهة النظام الخاصة بالطالب الحالية ---
@@ -84,32 +88,36 @@ current_student = st.session_state.student_row
 
 st.markdown(f"<h3 style='color: white;'>مرحباً بك: {current_student['student_name']} 👋</h3>", unsafe_allow_html=True)
 
-# 🚨 مستشعر فحص الغيابات التلقائي وإطلاق الإشعارات الملونة للـ الطالب
-math_absences = 0
-try:
-    math_absences = int(current_student.get('math_attendance', 0))
-except:
-    math_absences = 0
-
-if math_absences >= 7:
-    st.error(f"⚠️ **تحذير نهائي (مادة الرياضيات):** لقد تجاوزت نسبة الغيابات المسموحة المحددة بـ ({math_absences} غيابات). أنت معرض للفصل النهائي بمسار بولونيا!")
-elif math_absences >= 5:
-    st.warning(f"🟠 **تحذير ثانٍ (مادة الرياضيات):** عدد غياباتك الحالي هو ({math_absences} غيابات). يرجى توخي الحذر والالتزام بالمحاضرات القادمة.")
-elif math_absences >= 3:
-    st.info(f"🟡 **إنذار أول (مادة الرياضيات):** تم تسجيل ({math_absences} غيابات) بحقك. يرجى مراجعة أستاذ المادة لتجنب تصاعد الإنذار.")
-
 # زر تسجيل الخروج 🚪
 if st.button("تسجيل الخروج 🚪"):
     st.session_state.logged_in = False
     st.session_state.chat_history = None
     st.rerun()
 
-# إدارة وعرض الشات المظلم الفاخر
+# 5. هنا السحر: جعل جمناي يقوم بفحص كافة المواد السبعة وإشعال إنذارات الغياب تلقائياً فور الدخول
 if "chat_history" not in st.session_state:
-    st.session_state.chat_history = [
-        {"role": "assistant", "content": "أنا مساعدك الأكاديمي المطور،جاهز للمساعدة ."}
-    ]
+    with st.spinner("جاري قيام المساعد بفحص سجل غياباتك في جميع المواد..."):
+        init_prompt = f"""أنت المساعد الأكاديمي لجامعة الكوفة في مسار بولونيا. صانعك هو المبرمج البارع علي (أبو لينا) من قسم الرياضيات.
+        
+        إليك ملف درجات وغيابات الطالب الحالي بالكامل من جداول الأساتذة:
+        \"\"\"
+        {str(current_student)}
+        \"\"\"
+        
+        قم بتحليل غيابات الطالب في جميع المواد الموجودة في ملفه فوراً (مثل math_attendance و prog_attendance وغيرها)، واكتب له رسالة ترحيبية أولى ذكية تحتوي تلقائياً على إنذارات الغياب حسب هذه القواعد الصارمة:
+        - إذا كان الغياب في أي مادة يساوى أو أكبر من 3: قل له (إنذار أول 🟡) في مادة كذا.
+        - إذا كان الغياب في أي مادة يساوى أو أكبر من 5: قل له (تحذير ثانٍ 🟠) في مادة كذا.
+        - إذا كان الغياب في أي مادة يساوى أو أكبر من 7: قل له (تحذير نهائي وفصل 🔴) في مادة كذا.
+        
+        اكتب الرد بأسلوب تربوي منسق جداً، واذكر له إنذاراته بوضوح كـ نقاط إيموجي ملونة في أول الرسالة ليراها فوراً بوضوح."""
+        
+        try:
+            first_reply = client.models.generate_content(model='gemini-2.5-flash', contents=init_prompt).text
+            st.session_state.chat_history = [{"role": "assistant", "content": first_reply}]
+        except:
+            st.session_state.chat_history = [{"role": "assistant", "content": "أهلاً بك. أنا مساعدك الأكاديمي المطور، جاهز للمساعدة."}]
 
+# عرض الشات المظلم الفاخر
 chat_html = '<div class="chat-box">'
 for msg in st.session_state.chat_history:
     role_class = "user" if msg["role"] == "user" else "assistant"
@@ -117,12 +125,11 @@ for msg in st.session_state.chat_history:
 chat_html += "</div>"
 st.markdown(chat_html, unsafe_allow_html=True)
 
-# 5. محرك استقبال الأسئلة والرد الذكي من Gemini
+# 6. استقبال الأسئلة والرد الذكي من Gemini
 if user_query := st.chat_input("اسألني عن أي درجة أو غياب في المواد..."):
     st.session_state.chat_history.append({"role": "user", "content": user_query})
     
-    # تلقين جمناي ببيانات هذا الطالب بخصوصية مطلقة
-    chat_prompt = f"""أنت المساعد الأكاديمي لجامعة الكوفة لمسار بولونيا الإداري. مطورك هو المبرمج البارع علي (أبو لينا) من قسم الرياضيات.
+    chat_prompt = f"""أنت المساعد الأكاديمي لجامعة الكوفة لمسار بولونيا الإداري. مطورك هو المبرمج علي حكمت حسن من قسم الرياضيات.
     إليك ملف درجات الطالب الحالي المجمع تلقائياً:
     \"\"\"
     {str(current_student)}
