@@ -23,35 +23,41 @@ st.markdown("""
 if "GEMINI_API_KEY" in st.secrets:
     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 else:
-    st.error("يرجى ضبط مفتاح الـ API في إعدادات الأسرار.")
+    st.error("يرجى ضبط مفتاح الـ API in secrets.")
     st.stop()
 
 # 3. جلب وتجميع البيانات من روابط Google Sheet باستخدام الـ ID الخاص بك
 SHEET_ID = "1Z1snF8YttXoUu1TA35jD8cfbKtX4uZYK2-h2kOVDSTk"
 BASE_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet="
 
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=10) # تقليل الكاش إلى 10 ثوانٍ لتحديث البيانات بسرعة أثناء الفحص
 def load_all_academic_data():
     try:
-        # جلب صفحة الحسابات الأساسية (التي تحتوي على الرمز والباسورد والاسم)
-        df_accounts = pd.read_csv(BASE_URL + "حسابات_الطلاب")
+        # جلب صفحة الحسابات الأساسية والتحويل لنصوص لمنع مشكلة الفلوت (111111.0)
+        df_accounts = pd.read_csv(BASE_URL + "حسابات_الطلاب", dtype=str)
         
         # جلب صفحات المواد المفصلة للأساتذة
-        df_math = pd.read_csv(BASE_URL + "math")
-        df_prog = pd.read_csv(BASE_URL + "prog")
+        df_math = pd.read_csv(BASE_URL + "math", dtype=str)
+        df_prog = pd.read_csv(BASE_URL + "prog", dtype=str)
         
-        # حذف عمود اسم الطالب من صفحات المواد لتجنب تكرار الأعمدة عند الدمج البرمجي
+        # تنظيف الفراغات المخفية من الأعمدة الأساسية
+        for df in [df_accounts, df_math, df_prog]:
+            df.columns = df.columns.str.strip()
+            if 'username' in df.columns:
+                df['username'] = df['username'].astype(str).str.strip()
+        
+        # حذف اسم الطالب المكرر لمنع التداخل البرمجي
         if 'student_name' in df_math.columns: df_math = df_math.drop(columns=['student_name'])
         if 'student_name' in df_prog.columns: df_prog = df_prog.drop(columns=['student_name'])
             
-        # دمج الجداول بسلاسة في الخلفية بناءً على الرمز username
+        # دمج الجداول برمجياً
         final_df = pd.merge(df_accounts, df_math, on="username", how="left")
         final_df = pd.merge(final_df, df_prog, on="username", how="left")
         return final_df
-    except:
-        # بيانات احتياطية آمنة في حال وجود أي مشكلة مؤقتة في الاتصال
+    except Exception as e:
+        # بيانات احتياطية تفتح فوراً في حال وجود عطل بالربط
         return pd.DataFrame([
-            {"username": "ali123", "password": "123", "student_name": "علي حكمت حسن", "math_attendance": 5, "prog_attendance": 2}
+            {"username": "ali123", "password": "123", "student_name": "علي حكمت حسن", "math_attendance": "3", "prog_attendance": "4"}
         ])
 
 df_students = load_all_academic_data()
@@ -65,51 +71,45 @@ if not st.session_state.logged_in:
     st.markdown("<h2 style='text-align: center; color: white;'>🏛️ بوابة مسار بولونيا - جامعة الكوفة</h2>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #888;'>Log in</p>", unsafe_allow_html=True)
     
-    # 🌟 هنا الحل السحري للكيبورد الخارجي: وضع الحقول بداخل st.form
     with st.form("login_form", clear_on_submit=False):
-        input_user = st.text_input("Username:")
-        input_pass = st.text_input("Password:", type="password")
+        input_user = st.text_input("Username:").strip()
+        input_pass = st.text_input("Password:", type="password").strip()
         
-        # زر الإرسال المخصص للنموذج (سيعمل تلقائياً عند ضغط Enter في الكيبورد الخارجي)
         submit_button = st.form_submit_button("Log in now", use_container_width=True)
         
         if submit_button:
-            match = df_students[(df_students['username'].astype(str) == input_user) & (df_students['password'].astype(str) == input_pass)]
+            # مطابقة ذكية ونظيفة خالية من مشاكل الأنواع (Types) والفراغات
+            match = df_students[(df_students['username'] == input_user) & (df_students['password'] == input_pass)]
             if not match.empty:
                 st.session_state.logged_in = True
                 st.session_state.student_row = match.iloc[0].to_dict()
                 st.rerun()
             else:
-                st.error("❌ بيانات الدخول غير صحيحة.")
+                st.error("❌ بيانات الدخول غير صحيحة. تأكد من الرمز السري أو صلاحية مشاركة الرابط كـ Viewer.")
     st.stop()
 
-# --- بعد تسجيل الدخول بنجاح: واجهة النظام الخاصة بالطالب الحالية ---
+# --- بعد تسجيل الدخول بنجاح ---
 current_student = st.session_state.student_row
+st.markdown(f"<h3 style='color: white;'>مرحباً بك: {current_student.get('student_name', 'طالب جامعة الكوفة')} 👋</h3>", unsafe_allow_html=True)
 
-st.markdown(f"<h3 style='color: white;'>مرحباً بك: {current_student['student_name']} 👋</h3>", unsafe_allow_html=True)
-
-# زر تسجيل الخروج 🚪
 if st.button("تسجيل الخروج 🚪"):
     st.session_state.logged_in = False
     st.session_state.chat_history = None
     st.rerun()
 
-# 5. هنا السحر: جعل جمناي يقوم بفحص كافة المواد السبعة وإشعال إنذارات الغياب تلقائياً فور الدخول
+# 5. مستشعر فحص الغيابات الشامل عبر Gemini
 if "chat_history" not in st.session_state:
     with st.spinner("جاري قيام المساعد بفحص سجل غياباتك في جميع المواد..."):
-        init_prompt = f"""أنت المساعد الأكاديمي لجامعة الكوفة في مسار بولونيا. صانعك هو المبرمج البارع علي (أبو لينا) من قسم الرياضيات.
-        
+        init_prompt = f"""أنت المساعد الأكاديمي لجامعة الكوفة في مسار بولونيا. صانعك هو المبرمج علي حكمت حسن من قسم الرياضيات.
         إليك ملف درجات وغيابات الطالب الحالي بالكامل من جداول الأساتذة:
         \"\"\"
         {str(current_student)}
         \"\"\"
-        
         قم بتحليل غيابات الطالب في جميع المواد الموجودة في ملفه فوراً (مثل math_attendance و prog_attendance وغيرها)، واكتب له رسالة ترحيبية أولى ذكية تحتوي تلقائياً على إنذارات الغياب حسب هذه القواعد الصارمة:
         - إذا كان الغياب في أي مادة يساوى أو أكبر من 3: قل له (إنذار أول 🟡) في مادة كذا.
         - إذا كان الغياب في أي مادة يساوى أو أكبر من 5: قل له (تحذير ثانٍ 🟠) في مادة كذا.
         - إذا كان الغياب في أي مادة يساوى أو أكبر من 7: قل له (تحذير نهائي وفصل 🔴) في مادة كذا.
-        
-        اكتب الرد بأسلوب تربوي منسق جداً، واذكر له إنذاراته بوضوح كـ نقاط إيموجي ملونة في أول الرسالة ليراها فوراً بوضوح."""
+        اكتب الرد بأسلوب تربوي منسق، واذكر له إنذاراته بوضوح كـ نقاط إيموجي ملونة في أول الرسالة ليراها."""
         
         try:
             first_reply = client.models.generate_content(model='gemini-2.5-flash', contents=init_prompt).text
@@ -117,7 +117,7 @@ if "chat_history" not in st.session_state:
         except:
             st.session_state.chat_history = [{"role": "assistant", "content": "أهلاً بك. أنا مساعدك الأكاديمي المطور، جاهز للمساعدة."}]
 
-# عرض الشات المظلم الفاخر
+# عرض الشات المظلم
 chat_html = '<div class="chat-box">'
 for msg in st.session_state.chat_history:
     role_class = "user" if msg["role"] == "user" else "assistant"
@@ -125,17 +125,9 @@ for msg in st.session_state.chat_history:
 chat_html += "</div>"
 st.markdown(chat_html, unsafe_allow_html=True)
 
-# 6. استقبال الأسئلة والرد الذكي من Gemini
 if user_query := st.chat_input("اسألني عن أي درجة أو غياب في المواد..."):
     st.session_state.chat_history.append({"role": "user", "content": user_query})
-    
-    chat_prompt = f"""أنت المساعد الأكاديمي لجامعة الكوفة لمسار بولونيا الإداري. مطورك هو المبرمج علي حكمت حسن من قسم الرياضيات.
-    إليك ملف درجات الطالب الحالي المجمع تلقائياً:
-    \"\"\"
-    {str(current_student)}
-    \"\"\"
-    أجب على سؤال الطالب بدقة واختصار شديد وبلغة عربية مفهومة جداً ومنسقة: {user_query}"""
-    
+    chat_prompt = f"أنت المساعد الأكاديمي لجامعة الكوفة. بيانات الطالب: {str(current_student)}\nالسؤال: {user_query}"
     try:
         reply = client.models.generate_content(model='gemini-2.5-flash', contents=chat_prompt).text
         st.session_state.chat_history.append({"role": "assistant", "content": reply})
