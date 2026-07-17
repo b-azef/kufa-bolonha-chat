@@ -27,7 +27,7 @@ else:
     st.error("يرجى ضبط مفتاح الـ API في إعدادات الأسرار.")
     st.stop()
 
-# 3. جلب وتجميع البيانات من روابط Google Sheet باستخدام الـ ID الخاص بك
+# 3. جلب وتجميع البيانات من روابط Google Sheet
 SHEET_ID = "1Z1snF8YttXoUu1TA35jD8cfbKtX4uZYK2-h2kOVDSTk"
 BASE_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet="
 
@@ -94,27 +94,41 @@ if st.button("تسجيل الخروج 🚪"):
     st.session_state.chat_history = None
     st.rerun()
 
-# 5. جلب الترحيب الذكي وضمان بقائه كقائمة دائماً لمنع الـ TypeError
+# 🧠 التوجيهات الصارمة الجديدة لـ Gemini لحساب الدرجات برياضيات بولونيا الحقيقية
+BOLOGNA_RULES = """
+قواعد حاسمة ومقدسة لحساب درجات مسار بولونيا لجامعة الكوفة:
+1. "المعدل التكويني" (أو السعي السنوي) لكل مادة هو من 50 درجة كاملة كحد أقصى.
+2. يتم حساب المعدل التكويني لأي مادة عن طريق جمع أعمدة تلك المادة فقط وهي:
+   - لمادة الرياضيات (math): اجمّع (math_quizzes + math_mid + math_seminar + math_report) وأي تقييم آخر عدا الغياب.
+   - لمادة البرمجة (prog): اجمّع (prog_quizzes + prog_mid + prog_seminar + prog_report) وأي تقييم آخر عدا الغياب.
+3. تحذير خطير: أعمدة الـ (attendance) مثل `math_attendance` و `prog_attendance` تمثل **عدد غيابات الطالب (أيام الغياب)**، وهي أرقام صحيحة (مثال: 3 غيابات أو 5 غيابات). **إياك ثم إياك أن تجمع الغيابات مع الدرجات أو تحسبها كدرجة حضور!** الغيابات تُستخدم فقط لإصدار العقوبات والإنذارات (🟡 🟠 🔴) وليس لها أي علاقة بجمع المعدل التكويني من 50.
+"""
+
+# 5. جلب الترحيب الذكي
 if "chat_history" not in st.session_state or st.session_state.chat_history is None:
-    st.session_state.chat_history = []  # تصفير آمن وقائي كقائمة
+    st.session_state.chat_history = []
     
-    with st.spinner("جاري فحص غياباتك عبر المساعد الذكي..."):
-        init_prompt = f"""أنت المساعد الأكاديمي لجامعة الكوفة في مسار بولونيا. صانعك هو المبرمج  علي حكمت حسن من قسم الرياضيات.
-        بيانات الطالب الحالي: {str(current_student)}
-        قم بتحليل غيابات الطالب في جميع المواد (مثل math_attendance و prog_attendance)، واكتب له ترحيباً ذكياً أولياً يحتوي تلقائياً على إنذارات الغياب حسب هذه القواعد:
-        - غياب >= 3: (إنذار أول 🟡)
-        - غياب >= 5: (تحذير ثانٍ 🟠)
-        - غياب >= 7: (تحذير نهائي وفصل 🔴)
-        اكتب الرد بأسلوب تربوي منسق جداً، واذكر له إنذاراته كـ نقاط إيموجي ملونة في أول الرسالة ليراها."""
+    with st.spinner("جاري فحص غياباتك ودرجاتك بدقة..."):
+        init_prompt = f"""أنت المساعد الأكاديمي لجامعة الكوفة في مسار بولونيا. صانعك هو المبرمج علي حكمت حسن  من قسم الرياضيات.
+        {BOLOGNA_RULES}
+        
+        بيانات الطالب الحالي الحقيقية من الجداول:
+        \"\"\"
+        {str(current_student)}
+        \"\"\"
+        
+        قم بتحليل ملف الطالب:
+        - اذكر له إنذارات غياباته في كل مادة بوضوح بناءً على عدد غياباته المكتوب في الـ attendance (غياب >=3 إنذار 1، >=5 تحذير 2، >=7 فصل).
+        - احسب له "المعدل التكويني من 50" الحالي لكل مادة بشكل منفصل عبر جمع درجات الكويز والمد والسمنار والتقرير الخاصة بتلك المادة فقط، واعرض المجموع الصافي بوضوح لكي يطمئن الطالب.
+        اكتب الرد بأسلوب منسق جداً ومنظم بنقاط واضحة."""
         
         try:
             first_reply = client.models.generate_content(model='gemini-2.5-flash', contents=init_prompt).text
             st.session_state.chat_history.append({"role": "assistant", "content": first_reply})
         except:
-            # الحل الدفاعي: البقاء كقائمة منظمة حتى لو سقط الاتصال بجمناي
-            st.session_state.chat_history.append({"role": "assistant", "content": "أهلاً بك في بوابة الكوفة. تعذر الاتصال بالمستشعر الذكي مؤقتاً، لكن لوحة التحكم محملة ببياناتك بسلام."})
+            st.session_state.chat_history.append({"role": "assistant", "content": "أهلاً بك في بوابة الكوفة. تم تحميل بياناتك الأكاديمية بنجاح."})
 
-# 6. عرض الشات المظلم (الآن آمن ومستقر 100%)
+# 6. عرض الشات
 if isinstance(st.session_state.chat_history, list):
     chat_html = '<div class="chat-box">'
     for msg in st.session_state.chat_history:
@@ -123,10 +137,15 @@ if isinstance(st.session_state.chat_history, list):
     chat_html += "</div>"
     st.markdown(chat_html, unsafe_allow_html=True)
 
-# 7. استقبال الأسئلة اللاحقة
+# 7. استقبال الأسئلة اللاحقة وحمايتها بالقواعد
 if user_query := st.chat_input("Ask me..."):
     st.session_state.chat_history.append({"role": "user", "content": user_query})
-    chat_prompt = f"أنت المساعد الأكاديمي لجامعة الكوفة. بيانات الطالب: {str(current_student)}\nالسؤال: {user_query}"
+    
+    chat_prompt = f"""أنت المساعد الأكاديمي لجامعة الكوفة. صانعك علي (أبو لينا).
+    {BOLOGNA_RULES}
+    بيانات الطالب الحالي: {str(current_student)}
+    أجب على سؤال الطالب بدقة برمجية ورياضية حاسمة تلتزم بالقواعد أعلاه ولا تخترع معادلات من عندك: {user_query}"""
+    
     try:
         reply = client.models.generate_content(model='gemini-2.5-flash', contents=chat_prompt).text
         st.session_state.chat_history.append({"role": "assistant", "content": reply})
