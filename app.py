@@ -94,41 +94,23 @@ if st.button("تسجيل الخروج 🚪"):
     st.session_state.chat_history = None
     st.rerun()
 
-# 🧠 التوجيهات الصارمة الجديدة لـ Gemini لحساب الدرجات برياضيات بولونيا الحقيقية
+# قواعد مسار بولونيا المحدثة بدون كشف تلقائي للدرجات
 BOLOGNA_RULES = """
-قواعد حاسمة ومقدسة لحساب درجات مسار بولونيا لجامعة الكوفة:
-1. "المعدل التكويني" (أو السعي السنوي) لكل مادة هو من 50 درجة كاملة كحد أقصى.
-2. يتم حساب المعدل التكويني لأي مادة عن طريق جمع أعمدة تلك المادة فقط وهي:
-   - لمادة الرياضيات (math): اجمّع (math_quizzes + math_mid + math_seminar + math_report) وأي تقييم آخر عدا الغياب.
-   - لمادة البرمجة (prog): اجمّع (prog_quizzes + prog_mid + prog_seminar + prog_report) وأي تقييم آخر عدا الغياب.
-3. تحذير خطير: أعمدة الـ (attendance) مثل `math_attendance` و `prog_attendance` تمثل **عدد غيابات الطالب (أيام الغياب)**، وهي أرقام صحيحة (مثال: 3 غيابات أو 5 غيابات). **إياك ثم إياك أن تجمع الغيابات مع الدرجات أو تحسبها كدرجة حضور!** الغيابات تُستخدم فقط لإصدار العقوبات والإنذارات (🟡 🟠 🔴) وليس لها أي علاقة بجمع المعدل التكويني من 50.
+قواعد حاسمة لحساب درجات مسار بولونيا لجامعة الكوفة:
+1. "المعدل التكويني" (السعي السنوي) لكل مادة هو من 50 درجة كحد أقصى.
+2. يتم حساب المعدل التكويني عن طريق جمع أعمدة المادة المحددة فقط:
+   - للرياضيات (math): اجمّع (math_quizzes + math_mid + math_seminar + math_report).
+   - للبرمجة (prog): اجمّع (prog_quizzes + prog_mid + prog_seminar + prog_report).
+3. تحذير: أعمدة الـ (attendance) تمثل عدد أيام الغياب الفعلي، وهي أرقام صحيحة تستخدم فقط للإنذارات (غياب >=3 إنذار أول 🟡، >=5 تحذير ثانٍ 🟠، >=7 تحذير نهائي وفصل 🔴). لا تحسبها كدرجة حضور ولا تجمعها مع السعي مطلقاً.
 """
 
-# 5. جلب الترحيب الذكي
+# 5. الترحيب الأولي المختصر والذكي جداً
 if "chat_history" not in st.session_state or st.session_state.chat_history is None:
-    st.session_state.chat_history = []
-    
-    with st.spinner("جاري فحص غياباتك ودرجاتك بدقة..."):
-        init_prompt = f"""أنت المساعد الأكاديمي لجامعة الكوفة في مسار بولونيا. صانعك هو المبرمج علي حكمت حسن  من قسم الرياضيات.
-        {BOLOGNA_RULES}
-        
-        بيانات الطالب الحالي الحقيقية من الجداول:
-        \"\"\"
-        {str(current_student)}
-        \"\"\"
-        
-        قم بتحليل ملف الطالب:
-        - اذكر له إنذارات غياباته في كل مادة بوضوح بناءً على عدد غياباته المكتوب في الـ attendance (غياب >=3 إنذار 1، >=5 تحذير 2، >=7 فصل).
-        - احسب له "المعدل التكويني من 50" الحالي لكل مادة بشكل منفصل عبر جمع درجات الكويز والمد والسمنار والتقرير الخاصة بتلك المادة فقط، واعرض المجموع الصافي بوضوح لكي يطمئن الطالب.
-        اكتب الرد بأسلوب منسق جداً ومنظم بنقاط واضحة."""
-        
-        try:
-            first_reply = client.models.generate_content(model='gemini-2.5-flash', contents=init_prompt).text
-            st.session_state.chat_history.append({"role": "assistant", "content": first_reply})
-        except:
-            st.session_state.chat_history.append({"role": "assistant", "content": "أهلاً بك في بوابة الكوفة. تم تحميل بياناتك الأكاديمية بنجاح."})
+    student_name = current_student.get('student_name', 'طالبنا العزيز')
+    welcome_msg = f"أهلاً بك يا {student_name} في نظام المساعد الأكاديمي لجامعة الكوفة. أنا هنا لخدمتك، اسألني عن أي تفاصيل تخص درجاتك، سعيك السنوي، أو سجل غياباتك في المواد."
+    st.session_state.chat_history = [{"role": "assistant", "content": welcome_msg}]
 
-# 6. عرض الشات
+# 6. عرض الشات المظلم
 if isinstance(st.session_state.chat_history, list):
     chat_html = '<div class="chat-box">'
     for msg in st.session_state.chat_history:
@@ -137,14 +119,14 @@ if isinstance(st.session_state.chat_history, list):
     chat_html += "</div>"
     st.markdown(chat_html, unsafe_allow_html=True)
 
-# 7. استقبال الأسئلة اللاحقة وحمايتها بالقواعد
+# 7. استقبال الأسئلة اللاحقة بـ Ask me... وحسابها بدقة
 if user_query := st.chat_input("Ask me..."):
     st.session_state.chat_history.append({"role": "user", "content": user_query})
     
-    chat_prompt = f"""أنت المساعد الأكاديمي لجامعة الكوفة. صانعك علي (أبو لينا).
+    chat_prompt = f"""أنت المساعد الأكاديمي لجامعة الكوفة لمسار بولونيا. مطورك هو المبرمج البارع علي حكمت حسن من قسم الرياضيات.
     {BOLOGNA_RULES}
-    بيانات الطالب الحالي: {str(current_student)}
-    أجب على سؤال الطالب بدقة برمجية ورياضية حاسمة تلتزم بالقواعد أعلاه ولا تخترع معادلات من عندك: {user_query}"""
+    بيانات الطالب الحالي الحقيقية والمخفية عن الشاشة: {str(current_student)}
+    أجب على سؤال الطالب بدقة برمجية ورياضية حاسمة تلتزم بالقواعد أعلاه، ولا تذكر اسم "أبو لينا" في الشات واكتفِ بذكر المطور علي حكمت حسن إذا سُئلت عن المطور: {user_query}"""
     
     try:
         reply = client.models.generate_content(model='gemini-2.5-flash', contents=chat_prompt).text
