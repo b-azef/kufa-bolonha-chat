@@ -64,12 +64,12 @@ if "logged_in" not in st.session_state:
 
 if not st.session_state.logged_in:
     st.markdown("<h2 style='text-align: center; color: white;'>🏛️ بوابة مسار بولونيا - جامعة الكوفة</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #888;'>سجل دخولك بنظام الفولدرات الموزعة للأساتذة</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #888;'>Log in</p>", unsafe_allow_html=True)
     
-    input_user = st.text_input("اسم المستخدم (الرمز الكودي):")
-    input_pass = st.text_input("كلمة المرور:", type="password")
+    input_user = st.text_input("Username:")
+    input_pass = st.text_input("Password:", type="password")
     
-    if st.button("تسجيل الدخول الآمن"):
+    if st.button("Log in now"):
         match = df_students[(df_students['username'].astype(str) == input_user) & (df_students['password'].astype(str) == input_pass)]
         if not match.empty:
             st.session_state.logged_in = True
@@ -107,7 +107,7 @@ if st.button("تسجيل الخروج 🚪"):
 # إدارة وعرض الشات المظلم الفاخر
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
-        {"role": "assistant", "content": "أنا مساعدك الأكاديمي المطور، تم سحب درجاتك وإشعاراتك حية من سجلات الكلية وجاهز للإجابة على أي استفسار يخص المواد السبعة."}
+        {"role": "assistant", "content": "أنا مساعدك الأكاديمي المطور،جاهز للمساعدة ."}
     ]
 
 chat_html = '<div class="chat-box">'
