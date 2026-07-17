@@ -99,7 +99,7 @@ if "chat_history" not in st.session_state or st.session_state.chat_history is No
     st.session_state.chat_history = []  # تصفير آمن وقائي كقائمة
     
     with st.spinner("جاري فحص غياباتك عبر المساعد الذكي..."):
-        init_prompt = f"""أنت المساعد الأكاديمي لجامعة الكوفة في مسار بولونيا. صانعك هو المبرمج البارع علي (أبو لينا) من قسم الرياضيات.
+        init_prompt = f"""أنت المساعد الأكاديمي لجامعة الكوفة في مسار بولونيا. صانعك هو المبرمج  علي حكمت حسن من قسم الرياضيات.
         بيانات الطالب الحالي: {str(current_student)}
         قم بتحليل غيابات الطالب في جميع المواد (مثل math_attendance و prog_attendance)، واكتب له ترحيباً ذكياً أولياً يحتوي تلقائياً على إنذارات الغياب حسب هذه القواعد:
         - غياب >= 3: (إنذار أول 🟡)
@@ -124,7 +124,7 @@ if isinstance(st.session_state.chat_history, list):
     st.markdown(chat_html, unsafe_allow_html=True)
 
 # 7. استقبال الأسئلة اللاحقة
-if user_query := st.chat_input("اسألني عن أي درجة أو غياب في المواد..."):
+if user_query := st.chat_input("Ask me..."):
     st.session_state.chat_history.append({"role": "user", "content": user_query})
     chat_prompt = f"أنت المساعد الأكاديمي لجامعة الكوفة. بيانات الطالب: {str(current_student)}\nالسؤال: {user_query}"
     try:
