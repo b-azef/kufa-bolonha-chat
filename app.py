@@ -17,6 +17,17 @@ st.markdown("""
     .assistant .bubble { background: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%) !important; border-bottom-left-radius: 4px; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.25); }
     .user .bubble { background-color: #262626 !important; border-bottom-right-radius: 4px; }
     div[data-testid="stTextInput"] input { background-color: #1a1a1a !important; color: white !important; border: 1px solid #333 !important; border-radius: 10px !important; }
+    
+    /* تحسين مظهر بطاقات الملخص السريع */
+    div[data-testid="stMetric"] {
+        background-color: #1a1a1a !important;
+        border: 1px solid #333 !important;
+        padding: 15px !important;
+        border-radius: 12px !important;
+        text-align: center !important;
+    }
+    div[data-testid="stMetricLabel"] { color: #888888 !important; font-size: 14px !important; }
+    div[data-testid="stMetricValue"] { color: #ffffff !important; font-size: 22px !important; font-weight: bold !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -55,7 +66,7 @@ def load_all_academic_data():
         return final_df
     except:
         return pd.DataFrame([
-            {"username": "ali123", "password": "123", "student_name": "علي حكمت حسن", "math_attendance": "3", "prog_attendance": "4"}
+            {"username": "ali123", "password": "123", "student_name": "علي حكمت حسن", "math_attendance": "0", "prog_attendance": "0"}
         ])
 
 df_students = load_all_academic_data()
@@ -87,16 +98,57 @@ if not st.session_state.logged_in:
 
 # --- بعد تسجيل الدخول بنجاح ---
 current_student = st.session_state.student_row
-st.markdown(f"<h3 style='color: white;'>مرحباً بك: {current_student.get('student_name', 'طالب جامعة الكوفة')} 👋</h3>", unsafe_allow_html=True)
 
-if st.button("تسجيل الخروج 🚪"):
-    st.session_state.logged_in = False
-    st.session_state.chat_history = None
-    st.rerun()
+# الهيدر وزر خروج متناسقين
+col_name, col_logout = st.columns([4, 1])
+with col_name:
+    st.markdown(f"<h3 style='color: white; margin:0;'>مرحباً بك: {current_student.get('student_name', 'طالب جامعة الكوفة')} 👋</h3>", unsafe_allow_html=True)
+with col_logout:
+    if st.button("خروج 🚪", use_container_width=True):
+        st.session_state.logged_in = False
+        st.session_state.chat_history = None
+        st.rerun()
 
-# 🧠 القواعد الصارمة والمختصرة للغيابات والمهام الوظيفية
-# تم حذف فلسفة نظام بولونيا والاكتفاء بالرقم الصافي بناءً على طلبك
-# تم إلغاء اللقب المذكور في التوجيهات تماماً وحفظ خصوصية الاسم
+st.markdown("---")
+
+# 📊 قسم الملخص الأكاديمي السريع (Dashboard)
+st.markdown("<h4 style='color: #a855f7;'>📊 وضعك الأكاديمي الحالي بلمحة:</h4>", unsafe_allow_html=True)
+
+try:
+    # دالة مساعدة لتحويل النصوص إلى أرقام بأمان
+    def to_num(val):
+        try: return pd.to_numeric(val, errors='coerce') or 0.0
+        except: return 0.0
+
+    # حساب معدل الكويزات لمادة الرياضيات (من 10)
+    math_q = (to_num(current_student.get('quiz1', 0)) + 
+              to_num(current_student.get('quiz2', 0)) + 
+              to_num(current_student.get('quiz3', 0)) + 
+              to_num(current_student.get('quiz4', 0)) + 
+              to_num(current_student.get('quiz5', 0))) / 5
+
+    # حساب السعي الكلي للرياضيات (الكويزات + المد + السمنار + التقرير + الواجب إن وجد)
+    math_total = (math_q + 
+                  to_num(current_student.get('math_mid', 0)) + 
+                  to_num(current_student.get('math_seminar', 0)) + 
+                  to_num(current_student.get('math_report', 0)) +
+                  to_num(current_student.get('homework', 0))) # يجمع عامود الواجب تلقائياً إذا أضفته
+
+    # عرض البطاقات الرقمية
+    dash_col1, dash_col2, dash_col3 = st.columns(3)
+    with dash_col1:
+        st.metric(label="سعي الرياضيات الحالي", value=f"{math_total:.1f} / 50")
+    with dash_col2:
+        st.metric(label="غيابات الرياضيات", value=f"{current_student.get('math_attendance', '0')} يوم")
+    with dash_col3:
+        st.metric(label="غيابات البرمجة", value=f"{current_student.get('prog_attendance', '0')} يوم")
+
+except Exception as e:
+    st.caption("سيتم تحديث الحسابات الرياضية فور ملء درجات الجداول.")
+
+st.markdown("---")
+
+# 🧠 القواعد الصارمة والمختصرة للغيابات والمهام الوظيفية لجمناي
 STRICT_ACADEMIC_RULES = """
 أنت المساعد الأكاديمي الافتراضي لجامعة الكوفة في مسار بولونيا. مطورك هو علي حكمت حسن من قسم الرياضيات.
 
@@ -105,7 +157,7 @@ STRICT_ACADEMIC_RULES = """
 2. نطاق صلاحياتك الحصري: تخصصك هو عرض ومناقشة (الدرجات، السعي السنوي من 50، غيابات المواد، الكويزات، الواجبات البيئية homework، التبليغات الرسمية للقسم، جداول المحاضرات، ونظام الملازم الرقمية).
 
 3. التعامل مع الغيابات (قاعدة صارمة):
-   - أعمدة الـ `attendance` (مثل `math_attendance` و `prog_attendance`) تمثل **"عدد أيام الغياب الفعلي"**.
+   - أعمدة الـ `attendance` (مثل `math_attendance` و `prog_attendance`) تمثل "عدد أيام الغياب الفعلي".
    - عندما يسألك الطالب عن غيابه، اكتفِ فقط بذكر عدد أيام الغياب كـ رقم صافٍ بشكل طبيعي (مثال: "عدد أيام غيابك في الرياضيات هو 0 أيام" أو "ليس لديك غيابات حالياً، عددها 0"). لا تشرح قواعد مسار بولونيا ولا تقل "لا توجد درجات حضور في بولونيا".
    - إذا كان الرقم 3 أو أكثر، نبهه بوجود إنذار بحسب الأرقام التالية فقط: (الغيابات >= 3 إنذار أول 🟡، >= 5 تحذير ثانٍ 🟠، >= 7 تحذير نهائي وفصل 🔴).
 
