@@ -18,7 +18,7 @@ st.markdown("""
     .user .bubble { background-color: #262626 !important; border-bottom-right-radius: 4px; }
     div[data-testid="stTextInput"] input { background-color: #1a1a1a !important; color: white !important; border: 1px solid #333 !important; border-radius: 10px !important; }
     
-    /* تحسين مظهر بطاقات الملخص السريع */
+    /* تحسين مظهر بطاقات الغيابات السريعة */
     div[data-testid="stMetric"] {
         background-color: #1a1a1a !important;
         border: 1px solid #333 !important;
@@ -111,40 +111,14 @@ with col_logout:
 
 st.markdown("---")
 
-# 📊 قسم الملخص الأكاديمي السريع (Dashboard)
-st.markdown("<h4 style='color: #a855f7;'>📊 وضعك الأكاديمي الحالي بلمحة:</h4>", unsafe_allow_html=True)
+# 📊 قسم الملخص الأكاديمي السريع للغيابات فقط
+st.markdown("<h4 style='color: #a855f7;'>📊 موقف الغيابات الحالي:</h4>", unsafe_allow_html=True)
 
-try:
-    # دالة مساعدة لتحويل النصوص إلى أرقام بأمان
-    def to_num(val):
-        try: return pd.to_numeric(val, errors='coerce') or 0.0
-        except: return 0.0
-
-    # حساب معدل الكويزات لمادة الرياضيات (من 10)
-    math_q = (to_num(current_student.get('quiz1', 0)) + 
-              to_num(current_student.get('quiz2', 0)) + 
-              to_num(current_student.get('quiz3', 0)) + 
-              to_num(current_student.get('quiz4', 0)) + 
-              to_num(current_student.get('quiz5', 0))) / 5
-
-    # حساب السعي الكلي للرياضيات (الكويزات + المد + السمنار + التقرير + الواجب إن وجد)
-    math_total = (math_q + 
-                  to_num(current_student.get('math_mid', 0)) + 
-                  to_num(current_student.get('math_seminar', 0)) + 
-                  to_num(current_student.get('math_report', 0)) +
-                  to_num(current_student.get('homework', 0))) # يجمع عامود الواجب تلقائياً إذا أضفته
-
-    # عرض البطاقات الرقمية
-    dash_col1, dash_col2, dash_col3 = st.columns(3)
-    with dash_col1:
-        st.metric(label="سعي الرياضيات الحالي", value=f"{math_total:.1f} / 50")
-    with dash_col2:
-        st.metric(label="غيابات الرياضيات", value=f"{current_student.get('math_attendance', '0')} يوم")
-    with dash_col3:
-        st.metric(label="غيابات البرمجة", value=f"{current_student.get('prog_attendance', '0')} يوم")
-
-except Exception as e:
-    st.caption("سيتم تحديث الحسابات الرياضية فور ملء درجات الجداول.")
+dash_col1, dash_col2 = st.columns(2)
+with dash_col1:
+    st.metric(label="غيابات مادة الرياضيات", value=f"{current_student.get('math_attendance', '0')} يوم")
+with dash_col2:
+    st.metric(label="غيابات مادة البرمجة", value=f"{current_student.get('prog_attendance', '0')} day" if 'prog_attendance' in current_student else f"{current_student.get('attendance_y', '0')} يوم")
 
 st.markdown("---")
 
@@ -157,7 +131,7 @@ STRICT_ACADEMIC_RULES = """
 2. نطاق صلاحياتك الحصري: تخصصك هو عرض ومناقشة (الدرجات، السعي السنوي من 50، غيابات المواد، الكويزات، الواجبات البيئية homework، التبليغات الرسمية للقسم، جداول المحاضرات، ونظام الملازم الرقمية).
 
 3. التعامل مع الغيابات (قاعدة صارمة):
-   - أعمدة الـ `attendance` (مثل `math_attendance` و `prog_attendance`) تمثل "عدد أيام الغياب الفعلي".
+   - أعمدة الـ `attendance` تمثل "عدد أيام الغياب الفعلي".
    - عندما يسألك الطالب عن غيابه، اكتفِ فقط بذكر عدد أيام الغياب كـ رقم صافٍ بشكل طبيعي (مثال: "عدد أيام غيابك في الرياضيات هو 0 أيام" أو "ليس لديك غيابات حالياً، عددها 0"). لا تشرح قواعد مسار بولونيا ولا تقل "لا توجد درجات حضور في بولونيا".
    - إذا كان الرقم 3 أو أكثر، نبهه بوجود إنذار بحسب الأرقام التالية فقط: (الغيابات >= 3 إنذار أول 🟡، >= 5 تحذير ثانٍ 🟠، >= 7 تحذير نهائي وفصل 🔴).
 
