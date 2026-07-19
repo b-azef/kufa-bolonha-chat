@@ -38,13 +38,12 @@ else:
     st.error("يرجى ضبط مفتاح الـ API في إعدادات الأسرار.")
     st.stop()
 
-# 3. جلب وتجميع البيانات للمواد الـ 6 من روابط Google Sheet
+# 3. جلب وتجميع البيانات للمواد الـ 6 من روابط Google Sheet (تمت إضافة حماية الدمج هنا لمنع تداخل الأعمدة المتشابهة)
 SHEET_ID = "1Z1snF8YttXoUu1TA35jD8cfbKtX4uZYK2-h2kOVDSTk"
 BASE_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet="
 
 @st.cache_data(ttl=5)
 def load_all_academic_data():
-    # جلب جدول الحسابات الأساسي أولاً كقاعدة صلبة
     try:
         encoded_accounts = urllib.parse.quote("حسابات_الطلاب")
         final_df = pd.read_csv(BASE_URL + encoded_accounts, dtype=str)
@@ -52,10 +51,9 @@ def load_all_academic_data():
         if 'username' in final_df.columns:
             final_df['username'] = final_df['username'].astype(str).str.strip()
     except Exception as e:
-        # إذا فشل سحب الجدول الأصلي، نضع جدول طوارئ محلي لتتمكن من الدخول بأي حال
         return pd.DataFrame([{"username": "ali123", "password": "123", "student_name": "علي حكمت حسن"}])
 
-    # محاولة دمج بقية المواد بشكل مرن (إذا لم تكن الصفحة موجودة بعد، يتخطاها بأمان دون قفل الموقع)
+    # قائمة المواد الست
     materials = ["math_eng", "group_theory", "fuzzy_math", "arabic", "ai", "operations_res"]
     
     for mat in materials:
@@ -70,9 +68,9 @@ def load_all_academic_data():
             if 'student_name' in df_mat.columns:
                 df_mat = df_mat.drop(columns=['student_name'])
                 
-            final_df = pd.merge(final_df, df_mat, on="username", how="left")
+            # التعديل الحاسم: وضع لاحقة فارغة للمواد لمنع بايثون من تغيير أسماء الأعمدة الأصلية مثل الغيابات
+            final_df = pd.merge(final_df, df_mat, on="username", how="left", suffixes=("", f"_{mat}"))
         except:
-            # إذا كانت الصفحة غير موجودة في الشيت حالياً، يتجاوزها الكود ويستمر العمل
             continue
             
     return final_df
@@ -94,7 +92,6 @@ if not st.session_state.logged_in:
         submit_button = st.form_submit_button("Log in now", use_container_width=True)
         
         if submit_button:
-            # تصفية ومطابقة الحسابات
             match = df_students[(df_students['username'] == input_user) & (df_students['password'] == input_pass)]
             if not match.empty:
                 st.session_state.logged_in = True
@@ -153,7 +150,7 @@ STRICT_ACADEMIC_RULES = """
    - إذا كان الرقم 3 أو أكثر في أي مادة، نبهه بوجود إنذار بحسب الأرقام التالية فقط: (الغيابات >= 3 إنذار أول 🟡، >= 5 تحذير ثانٍ 🟠، >= 7 تحذير نهائي وفصل 🔴).
 
 4. خط أحمر صارم للمهام الخارجة عن وظيفتك: إذا طلب منك الطالب حل مسألة رياضية، كتابة تقرير، حل واجب، شرح درس، أو أي عمل دراسي نيابة عنه؛ يجب أن تتعذر منه فوراً وبأدب شديد وتخبره: 
-"عذراً، هذا الأمر ليس من ضمن مهامي الوظيفية هنا. أنا مخصص لمساعدتك في استعراض سياقك الأكاديمي (الدرجات، الغيابات، الملازم، الجدول، والتبليغات) فقط لحساب مسار بولونيا. يمكنك الانتقال والذهاب إلى تطبيق أو نموذج ذكاء اصطناعي عام آخر ليساعدك في حل وشرح هذه المسائل."
+"عذراً، هذا الأمر ليس من ضمن مهامي الوظيفية هنا. أنا مخصص لمساعدتك في استعراض سياقك الأكاديمي (الدرجات, الغيابات، الملازم، الجدول، والتبليغات) فقط لحساب مسار بولونيا. يمكنك الانتقال والذهاب إلى تطبيق أو نموذج ذكاء اصطناعي عام آخر ليساعدك في حل وشرح هذه المسائل."
 5. إياك أن تذكر لقب "أبو لينا" في الشات نهائياً، واكتفِ بذكر الاسم المطور "علي حكمت حسن".
 """
 
