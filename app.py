@@ -42,49 +42,40 @@ else:
 SHEET_ID = "1Z1snF8YttXoUu1TA35jD8cfbKtX4uZYK2-h2kOVDSTk"
 BASE_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet="
 
-@st.cache_data(ttl=10)
+@st.cache_data(ttl=5)
 def load_all_academic_data():
+    # جلب جدول الحسابات الأساسي أولاً كقاعدة صلبة
     try:
-        # أسماء الصفحات في الـ Google Sheet
-        sheets = {
-            "accounts": "حسابات_الطلاب",
-            "math_eng": "math_eng",
-            "group_theory": "group_theory",
-            "fuzzy_math": "fuzzy_math",
-            "arabic": "arabic",
-            "ai": "ai",
-            "operations_res": "operations_res"
-        }
-        
-        dfs = {}
-        for key, sheet_name in sheets.items():
-            encoded_name = urllib.parse.quote(sheet_name)
-            df = pd.read_csv(BASE_URL + encoded_name, dtype=str)
-            df.columns = df.columns.str.strip()
-            if 'username' in df.columns:
-                df['username'] = df['username'].astype(str).str.strip()
-            # مسح اسم الطالب من صفحات المواد لمنع التكرار عند الدمج
-            if key != "accounts" and 'student_name' in df.columns:
-                df = df.drop(columns=['student_name'])
-            dfs[key] = df
-            
-        # دمج كل الجداول بناءً على الـ username
-        final_df = dfs["accounts"]
-        for key in ["math_eng", "group_theory", "fuzzy_math", "arabic", "ai", "operations_res"]:
-            if key in dfs:
-                final_df = pd.merge(final_df, dfs[key], on="username", how="left")
-                
-        return final_df
+        encoded_accounts = urllib.parse.quote("حسابات_الطلاب")
+        final_df = pd.read_csv(BASE_URL + encoded_accounts, dtype=str)
+        final_df.columns = final_df.columns.str.strip()
+        if 'username' in final_df.columns:
+            final_df['username'] = final_df['username'].astype(str).str.strip()
     except Exception as e:
-        # بيانات احتياطية في حال فشل الاتصال المؤقت
-        return pd.DataFrame([
-            {
-                "username": "ali123", "password": "123", "student_name": "علي حكمت حسن",
-                "math_eng_attendance": "0", "group_theory_attendance": "0", 
-                "fuzzy_math_attendance": "0", "arabic_attendance": "0", 
-                "ai_attendance": "0", "operations_res_attendance": "0"
-            }
-        ])
+        # إذا فشل سحب الجدول الأصلي، نضع جدول طوارئ محلي لتتمكن من الدخول بأي حال
+        return pd.DataFrame([{"username": "ali123", "password": "123", "student_name": "علي حكمت حسن"}])
+
+    # محاولة دمج بقية المواد بشكل مرن (إذا لم تكن الصفحة موجودة بعد، يتخطاها بأمان دون قفل الموقع)
+    materials = ["math_eng", "group_theory", "fuzzy_math", "arabic", "ai", "operations_res"]
+    
+    for mat in materials:
+        try:
+            encoded_name = urllib.parse.quote(mat)
+            df_mat = pd.read_csv(BASE_URL + encoded_name, dtype=str)
+            df_mat.columns = df_mat.columns.str.strip()
+            
+            if 'username' in df_mat.columns:
+                df_mat['username'] = df_mat['username'].astype(str).str.strip()
+                
+            if 'student_name' in df_mat.columns:
+                df_mat = df_mat.drop(columns=['student_name'])
+                
+            final_df = pd.merge(final_df, df_mat, on="username", how="left")
+        except:
+            # إذا كانت الصفحة غير موجودة في الشيت حالياً، يتجاوزها الكود ويستمر العمل
+            continue
+            
+    return final_df
 
 df_students = load_all_academic_data()
 
@@ -103,13 +94,14 @@ if not st.session_state.logged_in:
         submit_button = st.form_submit_button("Log in now", use_container_width=True)
         
         if submit_button:
+            # تصفية ومطابقة الحسابات
             match = df_students[(df_students['username'] == input_user) & (df_students['password'] == input_pass)]
             if not match.empty:
                 st.session_state.logged_in = True
                 st.session_state.student_row = match.iloc[0].to_dict()
                 st.rerun()
             else:
-                st.error("❌ بيانات الدخول غير صحيحة.")
+                st.error("❌ بيانات الدخول غير صحيحة أو الجدول تحت التحديث.")
     st.stop()
 
 # --- بعد تسجيل الدخول بنجاح ---
@@ -129,7 +121,6 @@ st.markdown("---")
 # 📊 قسم الملخص الأكاديمي السريع للغيابات للمواد الـ 6
 st.markdown("<h4 style='color: #a855f7;'>📊 موقف غيابات المواد الحالي:</h4>", unsafe_allow_html=True)
 
-# عرض الغيابات في صفين (كل صف يحتوي على 3 مواد) لترتيب واجهة المستخدم
 row1_col1, row1_col2, row1_col3 = st.columns(3)
 with row1_col1:
     st.metric(label="رياضيات هندسية", value=f"{current_student.get('math_eng_attendance', '0')} يوم")
