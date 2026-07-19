@@ -38,35 +38,52 @@ else:
     st.error("يرجى ضبط مفتاح الـ API في إعدادات الأسرار.")
     st.stop()
 
-# 3. جلب وتجميع البيانات من روابط Google Sheet
+# 3. جلب وتجميع البيانات للمواد الـ 6 من روابط Google Sheet
 SHEET_ID = "1Z1snF8YttXoUu1TA35jD8cfbKtX4uZYK2-h2kOVDSTk"
 BASE_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet="
 
 @st.cache_data(ttl=10)
 def load_all_academic_data():
     try:
-        sheet_accounts_encoded = urllib.parse.quote("حسابات_الطلاب")
-        sheet_math_encoded = urllib.parse.quote("math")
-        sheet_prog_encoded = urllib.parse.quote("prog")
+        # أسماء الصفحات في الـ Google Sheet
+        sheets = {
+            "accounts": "حسابات_الطلاب",
+            "math_eng": "math_eng",
+            "group_theory": "group_theory",
+            "fuzzy_math": "fuzzy_math",
+            "arabic": "arabic",
+            "ai": "ai",
+            "operations_res": "operations_res"
+        }
         
-        df_accounts = pd.read_csv(BASE_URL + sheet_accounts_encoded, dtype=str)
-        df_math = pd.read_csv(BASE_URL + sheet_math_encoded, dtype=str)
-        df_prog = pd.read_csv(BASE_URL + sheet_prog_encoded, dtype=str)
-        
-        for df in [df_accounts, df_math, df_prog]:
+        dfs = {}
+        for key, sheet_name in sheets.items():
+            encoded_name = urllib.parse.quote(sheet_name)
+            df = pd.read_csv(BASE_URL + encoded_name, dtype=str)
             df.columns = df.columns.str.strip()
             if 'username' in df.columns:
                 df['username'] = df['username'].astype(str).str.strip()
-        
-        if 'student_name' in df_math.columns: df_math = df_math.drop(columns=['student_name'])
-        if 'student_name' in df_prog.columns: df_prog = df_prog.drop(columns=['student_name'])
+            # مسح اسم الطالب من صفحات المواد لمنع التكرار عند الدمج
+            if key != "accounts" and 'student_name' in df.columns:
+                df = df.drop(columns=['student_name'])
+            dfs[key] = df
             
-        final_df = pd.merge(df_accounts, df_math, on="username", how="left")
-        final_df = pd.merge(final_df, df_prog, on="username", how="left")
+        # دمج كل الجداول بناءً على الـ username
+        final_df = dfs["accounts"]
+        for key in ["math_eng", "group_theory", "fuzzy_math", "arabic", "ai", "operations_res"]:
+            if key in dfs:
+                final_df = pd.merge(final_df, dfs[key], on="username", how="left")
+                
         return final_df
-    except:
+    except Exception as e:
+        # بيانات احتياطية في حال فشل الاتصال المؤقت
         return pd.DataFrame([
-            {"username": "ali123", "password": "123", "student_name": "علي حكمت حسن", "math_attendance": "0", "prog_attendance": "0"}
+            {
+                "username": "ali123", "password": "123", "student_name": "علي حكمت حسن",
+                "math_eng_attendance": "0", "group_theory_attendance": "0", 
+                "fuzzy_math_attendance": "0", "arabic_attendance": "0", 
+                "ai_attendance": "0", "operations_res_attendance": "0"
+            }
         ])
 
 df_students = load_all_academic_data()
@@ -83,7 +100,6 @@ if not st.session_state.logged_in:
     with st.form("login_form", clear_on_submit=False):
         input_user = st.text_input("Username:").strip()
         input_pass = st.text_input("Password:", type="password").strip()
-        
         submit_button = st.form_submit_button("Log in now", use_container_width=True)
         
         if submit_button:
@@ -99,7 +115,6 @@ if not st.session_state.logged_in:
 # --- بعد تسجيل الدخول بنجاح ---
 current_student = st.session_state.student_row
 
-# الهيدر وزر خروج متناسقين
 col_name, col_logout = st.columns([4, 1])
 with col_name:
     st.markdown(f"<h3 style='color: white; margin:0;'>مرحباً بك: {current_student.get('student_name', 'طالب جامعة الكوفة')} 👋</h3>", unsafe_allow_html=True)
@@ -111,14 +126,25 @@ with col_logout:
 
 st.markdown("---")
 
-# 📊 قسم الملخص الأكاديمي السريع للغيابات فقط
-st.markdown("<h4 style='color: #a855f7;'>📊 موقف الغيابات الحالي:</h4>", unsafe_allow_html=True)
+# 📊 قسم الملخص الأكاديمي السريع للغيابات للمواد الـ 6
+st.markdown("<h4 style='color: #a855f7;'>📊 موقف غيابات المواد الحالي:</h4>", unsafe_allow_html=True)
 
-dash_col1, dash_col2 = st.columns(2)
-with dash_col1:
-    st.metric(label="غيابات مادة الرياضيات", value=f"{current_student.get('math_attendance', '0')} يوم")
-with dash_col2:
-    st.metric(label="غيابات مادة البرمجة", value=f"{current_student.get('prog_attendance', '0')} day" if 'prog_attendance' in current_student else f"{current_student.get('attendance_y', '0')} يوم")
+# عرض الغيابات في صفين (كل صف يحتوي على 3 مواد) لترتيب واجهة المستخدم
+row1_col1, row1_col2, row1_col3 = st.columns(3)
+with row1_col1:
+    st.metric(label="رياضيات هندسية", value=f"{current_student.get('math_eng_attendance', '0')} يوم")
+with row1_col2:
+    st.metric(label="جبر الزمر", value=f"{current_student.get('group_theory_attendance', '0')} يوم")
+with row1_col3:
+    st.metric(label="رياضيات ضبابية", value=f"{current_student.get('fuzzy_math_attendance', '0')} يوم")
+
+row2_col1, row2_col2, row2_col3 = st.columns(3)
+with row2_col1:
+    st.metric(label="اللغة العربية", value=f"{current_student.get('arabic_attendance', '0')} يوم")
+with row2_col2:
+    st.metric(label="الذكاء الاصطناعي", value=f"{current_student.get('ai_attendance', '0')} يوم")
+with row2_col3:
+    st.metric(label="بحوث العمليات", value=f"{current_student.get('operations_res_attendance', '0')} يوم")
 
 st.markdown("---")
 
@@ -128,12 +154,12 @@ STRICT_ACADEMIC_RULES = """
 
 التوجيهات والمهام الوظيفية المحددة لك:
 1. التفاعل الفردي: عندما يسألك الطالب عن نفسه، درجاته، غياباته، أو مستواه الأكاديمي، أجب بسلاسة، ود، وطبيعية كاملة. قم بتحليل درجاته وسعيه الحالي لتشجيعه أو إعطائه نصيحة أكاديمية مفيدة بأسلوب مرن وراقٍ.
-2. نطاق صلاحياتك الحصري: تخصصك هو عرض ومناقشة (الدرجات، السعي السنوي من 50، غيابات المواد، الكويزات، الواجبات البيئية homework، التبليغات الرسمية للقسم، جداول المحاضرات، ونظام الملازم الرقمية).
+2. نطاق صلاحياتك الحصري: تخصصك هو عرض ومناقشة تفاصيل المواد الست (الرياضيات الهندسية، جبر الزمر، الرياضيات الضبابية، اللغة العربية، الذكاء الاصطناعي، وبحوث العمليات) من حيث: (الدرجات، السعي السنوي من 50، غيابات المواد، الكويزات، الواجبات البيئية homework، التبليغات الرسمية للقسم، جداول المحاضرات، ونظام الملازم الرقمية).
 
 3. التعامل مع الغيابات (قاعدة صارمة):
-   - أعمدة الـ `attendance` تمثل "عدد أيام الغياب الفعلي".
-   - عندما يسألك الطالب عن غيابه، اكتفِ فقط بذكر عدد أيام الغياب كـ رقم صافٍ بشكل طبيعي (مثال: "عدد أيام غيابك في الرياضيات هو 0 أيام" أو "ليس لديك غيابات حالياً، عددها 0"). لا تشرح قواعد مسار بولونيا ولا تقل "لا توجد درجات حضور في بولونيا".
-   - إذا كان الرقم 3 أو أكثر، نبهه بوجود إنذار بحسب الأرقام التالية فقط: (الغيابات >= 3 إنذار أول 🟡، >= 5 تحذير ثانٍ 🟠، >= 7 تحذير نهائي وفصل 🔴).
+   - أعمدة الـ `attendance` تمثل "عدد أيام الغياب الفعلي" للمادة المعنية.
+   - عندما يسألك الطالب عن غيابه، اكتفِ فقط بذكر عدد أيام الغياب كـ رقم صافٍ بشكل طبيعي (مثال: "عدد أيام غيابك في الذكاء الاصطناعي هو 0 أيام"). لا تشرح قواعد مسار بولونيا ولا تقل "لا توجد درجات حضور في بولونيا".
+   - إذا كان الرقم 3 أو أكثر في أي مادة، نبهه بوجود إنذار بحسب الأرقام التالية فقط: (الغيابات >= 3 إنذار أول 🟡، >= 5 تحذير ثانٍ 🟠، >= 7 تحذير نهائي وفصل 🔴).
 
 4. خط أحمر صارم للمهام الخارجة عن وظيفتك: إذا طلب منك الطالب حل مسألة رياضية، كتابة تقرير، حل واجب، شرح درس، أو أي عمل دراسي نيابة عنه؛ يجب أن تتعذر منه فوراً وبأدب شديد وتخبره: 
 "عذراً، هذا الأمر ليس من ضمن مهامي الوظيفية هنا. أنا مخصص لمساعدتك في استعراض سياقك الأكاديمي (الدرجات، الغيابات، الملازم، الجدول، والتبليغات) فقط لحساب مسار بولونيا. يمكنك الانتقال والذهاب إلى تطبيق أو نموذج ذكاء اصطناعي عام آخر ليساعدك في حل وشرح هذه المسائل."
@@ -143,7 +169,7 @@ STRICT_ACADEMIC_RULES = """
 # 5. الترحيب الأولي المنظم واللطيف
 if "chat_history" not in st.session_state or st.session_state.chat_history is None:
     student_name = current_student.get('student_name', 'طالبنا العزيز')
-    welcome_msg = f"أهلاً بك يا {student_name} في مساعد جامعة الكوفة الأكاديمي. أنا هنا لخدمتك ومساعدتك في تتبع درجاتك، سعيك السنوي، غياباتك، التبليغات الرسمية، جداول المحاضرات، ونظام الملازم. كيف يمكنني مساعدتك أكاديمياً اليوم؟"
+    welcome_msg = f"أهلاً بك يا {student_name} في مساعد جامعة الكوفة الأكاديمي للمواد الست. أنا هنا لخدمتك ومساعدتك في تتبع درجاتك، غياباتك، التبليغات الرسمية، جداول المحاضرات، ونظام الملازم. كيف يمكنني مساعدتك أكاديمياً اليوم؟"
     st.session_state.chat_history = [{"role": "assistant", "content": welcome_msg}]
 
 # 6. عرض الشات المظلم
