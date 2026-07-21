@@ -116,23 +116,60 @@ with col_logout:
 st.markdown("---")
 
 # 📊 قسم الملخص الأكاديمي السريع للغيابات للمواد الـ 6
+
+    # 📊 قسم الملخص الأكاديمي السريع للغيابات للمواد الـ 6 مع شريط تقدم (Progress Bar)
 st.markdown("<h4 style='color: #a855f7;'>📊 موقف غيابات المواد الحالي:</h4>", unsafe_allow_html=True)
 
-row1_col1, row1_col2, row1_col3 = st.columns(3)
-with row1_col1:
-    st.metric(label="رياضيات هندسية", value=f"{current_student.get('math_eng_attendance', '0')} يوم")
-with row1_col2:
-    st.metric(label="جبر الزمر", value=f"{current_student.get('group_theory_attendance', '0')} يوم")
-with row1_col3:
-    st.metric(label="رياضيات ضبابية", value=f"{current_student.get('fuzzy_math_attendance', '0')} يوم")
+# دالة مساعدة لحساب النسبة المئوية وتحديد الحالة البصرية
+def get_attendance_progress(val_str):
+    try:
+        absent_days = int(val_str)
+    except:
+        absent_days = 0
+    
+    # الحد الأقصى للغياب بحسب مسار بولونيا هو 7 أيام (100%)
+    max_days = 7
+    percentage = min(int((absent_days / max_days) * 100), 100)
+    fraction = min(absent_days / max_days, 1.0)
+    
+    # تحديد النص والرمز الحركي بناءً على عدد الأيام
+    if absent_days >= 7:
+        status_text = f"🔴 محظور/فصل ({percentage}%)"
+    elif absent_days >= 5:
+        status_text = f"🟠 تحذير ثانٍ ({percentage}%)"
+    elif absent_days >= 3:
+        status_text = f"🟡 إنذار أول ({percentage}%)"
+    else:
+        status_text = f"🟢 وضع آمن ({percentage}%)"
+        
+    return absent_days, fraction, status_text
 
-row2_col1, row2_col2, row2_col3 = st.columns(3)
-with row2_col1:
-    st.metric(label="اللغة العربية", value=f"{current_student.get('arabic_attendance', '0')} يوم")
-with row2_col2:
-    st.metric(label="الذكاء الاصطناعي", value=f"{current_student.get('ai_attendance', '0')} يوم")
-with row2_col3:
-    st.metric(label="بحوث العمليات", value=f"{current_student.get('operations_res_attendance', '0')} يوم")
+# قائمة المواد مع عناوينها ومفاتيح البيانات الخاصة بها
+subjects = [
+    ("رياضيات هندسية", "math_eng_attendance"),
+    ("جبر الزمر", "group_theory_attendance"),
+    ("رياضيات ضبابية", "fuzzy_math_attendance"),
+    ("اللغة العربية", "arabic_attendance"),
+    ("الذكاء الاصطناعي", "ai_attendance"),
+    ("بحوث العمليات", "operations_res_attendance")
+]
+
+# عرض المواد على شكل صفين (3 مواد في كل صف)
+for row in range(2):
+    cols = st.columns(3)
+    for col_idx in range(3):
+        subj_idx = row * 3 + col_idx
+        title, key = subjects[subj_idx]
+        raw_val = current_student.get(key, '0')
+        days, progress_val, status = get_attendance_progress(raw_val)
+        
+        with cols[col_idx]:
+            # عرض البطاقة الرقمية
+            st.metric(label=title, value=f"{days} / 7 أيام")
+            # شريط التقدم التفاعلي (Progress Bar)
+            st.progress(progress_val)
+            # نص الحالة والنسبة المئوية تحته مباشرة
+            st.markdown(f"<p style='text-align: center; font-size: 12px; margin-top: -10px; color: #aaa;'>{status}</p>", unsafe_allow_html=True)
 
 st.markdown("---")
 
