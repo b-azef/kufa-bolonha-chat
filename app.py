@@ -214,17 +214,29 @@ if isinstance(st.session_state.chat_history, list):
     st.markdown(chat_html, unsafe_allow_html=True)
 
 # 7. استقبال الأسئلة اللاحقة وإخضاعها للمهام التنظيمية المحددة
+# 7. استقبال الأسئلة اللاحقة وإعادة إرسال كامل المحادثة ليتذكرها البوت
 if user_query := st.chat_input("Ask me..."):
+    # إضافة سؤال الطالب الحالي لسجل المحادثة
     st.session_state.chat_history.append({"role": "user", "content": user_query})
     
+    # 🧠 تجميع سجل المحادثة السابق ليفهمه الذكاء الاصطناعي كأنها محادثة مستمرة
+    conversation_context = ""
+    for msg in st.session_state.chat_history:
+        role_label = "الطالب" if msg["role"] == "user" else "المساعد"
+        conversation_context += f"{role_label}: {msg['content']}\n"
+
     chat_prompt = f"""{STRICT_ACADEMIC_RULES}
     بيانات الطالب الحالي المخفية عن الشاشة: {str(current_student)}
-    سؤال الطالب الحالي: {user_query}
-    تذكر: اذكر الرقم الصافي للغيابات فوراً دون الدخول في تبريرات أو شرح للنظام البولوني الخارجي."""
+
+    سجل المحادثة الكامل حتى الآن:
+    {conversation_context}
+
+    تذكر: أجب بناءً على سياق المحادثة أعلاه واذكر الأرقام الصافية للغيابات دون شرح للنظام البولوني."""
     
-    try:
-        reply = client.models.generate_content(model='gemini-2.5-flash', contents=chat_prompt).text
-        st.session_state.chat_history.append({"role": "assistant", "content": reply})
-        st.rerun()
-    except Exception as e:
-        st.error(f"خطأ في الاتصال: {e}")
+    with st.spinner("🤖 جاري التفكير والكتابة..."):
+        try:
+            reply = client.models.generate_content(model='gemini-2.5-flash', contents=chat_prompt).text
+            st.session_state.chat_history.append({"role": "assistant", "content": reply})
+            st.rerun()
+        except Exception as e:
+            st.error(f"خطأ في الاتصال: {e}")
