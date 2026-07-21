@@ -78,6 +78,7 @@ def load_all_academic_data():
 df_students = load_all_academic_data()
 
 # 4. إدارة جلسة تسجيل الدخول (Session State)
+# 4. إدارة جلسة تسجيل الدخول (Session State)
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.student_row = None
@@ -86,20 +87,26 @@ if not st.session_state.logged_in:
     st.markdown("<h2 style='text-align: center; color: white;'>🏛️ بوابة مسار بولونيا - جامعة الكوفة</h2>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #888;'>Log in</p>", unsafe_allow_html=True)
     
-    with st.form("login_form", clear_on_submit=False):
-        input_user = st.text_input("Username:").strip()
-        input_pass = st.text_input("Password:", type="password").strip()
-        submit_button = st.form_submit_button("Log in now", use_container_width=True)
-        
-        if submit_button:
-            match = df_students[(df_students['username'] == input_user) & (df_students['password'] == input_pass)]
-            if not match.empty:
-                st.session_state.logged_in = True
-                st.session_state.student_row = match.iloc[0].to_dict()
-                st.rerun()
-            else:
-                st.error("❌ بيانات الدخول غير صحيحة أو الجدول تحت التحديث.")
+    # مدخلات مباشرة لتسهيل التنقل والتفاعل السريع
+    input_user = st.text_input("Username:").strip()
+    
+    # يظهر حقل الباسورد دائماً، وعند ادخال الرقم والضغط على Enter يتم الدخول فوراً
+    input_pass = st.text_input("Password:", type="password").strip()
+    
+    submit_button = st.button("Log in now", use_container_width=True)
+    
+    # يتم التحقق سواء عند ضغط الزر أو عند الضغط على Enter بعد كتابة الباسورد
+    if submit_button or (input_user and input_pass):
+        match = df_students[(df_students['username'] == input_user) & (df_students['password'] == input_pass)]
+        if not match.empty:
+            st.session_state.logged_in = True
+            st.session_state.student_row = match.iloc[0].to_dict()
+            st.rerun()
+        elif submit_button:
+            st.error("❌ بيانات الدخول غير صحيحة أو الجدول تحت التحديث.")
+            
     st.stop()
+    
 
 # --- بعد تسجيل الدخول بنجاح ---
 current_student = st.session_state.student_row
