@@ -128,15 +128,17 @@ with col_logout:
 st.markdown("---")
 
 # 📢 قسم التبليغات والإعلانات الرسمية (يظهر فور الدخول إذا كان هناك تبليغ)
+# 📢 قسم التبليغات والإعلانات الرسمية (يظهر فور الدخول إذا كان هناك تبليغ)
 announcements_df = load_announcements(current_student.get('username', ''))
 
 if not announcements_df.empty:
     st.markdown("<h4 style='color: #3b82f6;'>📢 التبليغات والإعلانات الرسمية:</h4>", unsafe_allow_html=True)
     for _, row in announcements_df.iterrows():
-        title = row.get('subject', 'إعلان رسمي')
+        # سحب الرسالة فقط بما أننا ألغينا الأعمدة الأخرى
         msg_body = row.get('message', '')
-        msg_date = row.get('date', '')
-        st.info(f"📌 **[{title}]** ({msg_date}):\n\n{msg_body}")
+        
+        # عرض صندوق تنبيه بسيط وأنيق
+        st.info(f"📌 {msg_body}")
     st.markdown("---")
 
 # 📊 قسم الملخص الأكاديمي السريع للغيابات للمواد الـ 6 مع شريط تقدم (Progress Bar)
