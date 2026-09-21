@@ -74,16 +74,24 @@ def load_all_academic_data():
     return final_df
 
 # دالة جلب التبليغات الرسمية الخاصة بالطالب أو العامة للقسم
-@st.cache_data(ttl=5)
+@st.cache_data(ttl=1)
 def load_announcements(username):
     try:
         encoded_sheet = urllib.parse.quote("announcements")
         df_ann = pd.read_csv(BASE_URL + encoded_sheet, dtype=str)
+        
+        # تنظيف أسماء الأعمدة من المسافات
         df_ann.columns = df_ann.columns.str.strip()
         
-        # فلترة التبليغات: الموجهة للجميع (all) أو الموجهة لحساب الطالب الحالي
-        user_ann = df_ann[(df_ann['target'] == 'all') | (df_ann['target'] == username)]
-        return user_ann
+        # التأكد من وجود عمود target وتنظيف محتواه من المسافات
+        if 'target' in df_ann.columns:
+            df_ann['target'] = df_ann['target'].astype(str).str.strip().str.lower()
+            target_user = str(username).strip().lower()
+            
+            # مطابقة all أو اسم المستخدم
+            user_ann = df_ann[(df_ann['target'] == 'all') | (df_ann['target'] == target_user)]
+            return user_ann
+        return pd.DataFrame()
     except Exception as e:
         return pd.DataFrame()
 
