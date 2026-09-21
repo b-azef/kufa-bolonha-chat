@@ -95,21 +95,6 @@ def load_all_academic_data():
   return final_df
 
 
-# دالة جلب التبليغات المحمية من مشاكل المسافات والأحرف
-@st.cache_data(ttl=1)
-def load_announcements(username):
-  try:
-    encoded_sheet = urllib.parse.quote("announcements")
-    url = BASE_URL + encoded_sheet
-    df_ann = pd.read_csv(url, dtype=str)
-
-    # تنظيف أسماء الأعمدة من أي فراغات مخفية
-    df_ann.columns = df_ann.columns.str.strip().str.lower()
-
-    if "target" in df_ann.columns and "message" in df_ann.columns:
-      # تنظيف نصوص الأعمدة من الفراغات
-      df_ann["target"] = df_ann["target"].astype(str).str.strip().str.lower()
-      current_user = str(username).strip().lower()
 
       # مطابقة 'all' أو اسم المستخدم الخاص بالطالب
       user_ann = df_ann[
@@ -176,18 +161,6 @@ with col_logout:
 
 st.markdown("---")
 
-# 📢 قسم التبليغات والإعلانات الرسمية المحدث
-announcements_df = load_announcements(current_student.get("username", ""))
-
-if not announcements_df.empty:
-  st.markdown(
-      "<h4 style='color: #3b82f6;'>📢 التبليغات والإعلانات الرسمية:</h4>",
-      unsafe_allow_html=True,
-  )
-  for _, row in announcements_df.iterrows():
-    msg_body = row.get("message", "")
-    st.info(f"📌 {msg_body}")
-  st.markdown("---")
 
 # 📊 قسم الملخص الأكاديمي السريع للغيابات للمواد الـ 6 مع شريط تقدم (Progress Bar)
 st.markdown(
