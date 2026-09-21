@@ -74,19 +74,32 @@ def load_all_academic_data():
     return final_df
 
 # دالة جلب التبليغات الرسمية الخاصة بالطالب أو العامة للقسم
-@st.cache_data(ttl=1)
+# دالة جلب التبليغات المحمية من مشاكل المسافات
+@st.cache_data(ttl=1)  # جعلناها ثانية واحدة لتحديث فوري بدون تعليق الكاش
 def load_announcements(username):
-    try:
-        encoded_sheet = urllib.parse.quote("announcements")
-        df_ann = pd.read_csv(BASE_URL + encoded_sheet, dtype=str)
-        
-        # تنظيف أسماء الأعمدة من المسافات
-        df_ann.columns = df_ann.columns.str.strip()
-        
-        # التأكد من وجود عمود target وتنظيف محتواه من المسافات
-        if 'target' in df_ann.columns:
-            df_ann['target'] = df_ann['target'].astype(str).str.strip().str.lower()
-            target_user = str(username).strip().lower()
+  try:
+    encoded_sheet = urllib.parse.quote("announcements")
+    url = BASE_URL + encoded_sheet
+    df_ann = pd.read_csv(url, dtype=str)
+
+    # 1. إزالة أي مسافات من أسماء الأعمدة وتحويلها لحروف صغيرة
+    df_ann.columns = df_ann.columns.str.strip().str.lower()
+
+    # 2. التأكد من وجود الأعمدة
+    if "target" in df_ann.columns and "message" in df_ann.columns:
+      # تنظيف محتوى عمود target من المسافات
+      df_ann["target"] = df_ann["target"].astype(str).str.strip().str.lower()
+      current_user = str(username).strip().lower()
+
+      # مطابقة 'all' أو اسم المستخدم
+      user_ann = df_ann[
+          (df_ann["target"] == "all") | (df_ann["target"] == current_user)
+      ]
+      return user_ann
+
+    return pd.DataFrame()
+  except Exception as e:
+    return pd.DataFrame()
             
             # مطابقة all أو اسم المستخدم
             user_ann = df_ann[(df_ann['target'] == 'all') | (df_ann['target'] == target_user)]
