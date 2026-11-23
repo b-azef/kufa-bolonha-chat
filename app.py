@@ -6,7 +6,7 @@ import streamlit as st
 
 # 1. إعدادات المظهر المظلم الكامل والمستقر
 st.set_page_config(
-    page_ttitle"كلية علوم الحاسوب والرياضيات",
+    page_ttitle="كلية علوم الحاسوب والرياضيات",
     page_icon="🏛️",
     layout="centered",
 )
