@@ -6,7 +6,6 @@ import streamlit as st
 
 st.set_page_config(
     page_title="كلية علوم الحاسوب والرياضيات",
-    page_icon="🏛️",
     layout="centered",
 )
 
