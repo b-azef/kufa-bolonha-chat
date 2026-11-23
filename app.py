@@ -6,6 +6,7 @@ import streamlit as st
 
 st.set_page_config(
     page_title="كلية علوم الحاسوب والرياضيات",
+    page_icon="🏛️",
     layout="centered",
 )
 
@@ -19,7 +20,7 @@ css_style = (
     ".msg-wrapper.user { justify-content: flex-start; }"
     ".bubble { padding: 14px 18px; border-radius: 18px; font-size: 16px; max-width: 82%; color: white; line-height: 1.6; }"
     ".assistant .bubble { background: linear-gradient(135deg, #f59e0b 0%, #ea580c 50%, #b91c1c 100%) !important; border-bottom-left-radius: 4px; box-shadow: 0 4px 15px rgba(234, 88, 12, 0.35); }"
-    ".assistant .bubble a { display: inline-block; margin-top: 8px; padding: 6px 14px; background-color: #1c1008; color: #fbbf24 !important; text-decoration: none; border-radius: 8px; font-weight: bold; border: 1px solid #fbbf24; }"
+    ".assistant .bubble a { display: inline-block; margin-top: 6px; margin-bottom: 4px; padding: 6px 14px; background-color: #1c1008; color: #fbbf24 !important; text-decoration: none; border-radius: 8px; font-weight: bold; border: 1px solid #fbbf24; }"
     ".user .bubble { background-color: #261811 !important; border: 1px solid #452718 !important; border-bottom-right-radius: 4px; }"
     "div[data-testid='stTextInput'] input { background-color: #17100c !important; color: white !important; border: 1px solid #452718 !important; border-radius: 10px !important; }"
     "div[data-testid='stMetric'] { background-color: #17100c !important; border: 1px solid #2e1d14 !important; padding: 15px !important; border-radius: 12px !important; text-align: center !important; }"
@@ -42,17 +43,17 @@ BASE_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:c
 @st.cache_data(ttl=5)
 def load_all_academic_data():
     default_subjects_info = {
-        "math_eng": {"subject_name": "رياضيات هندسية", "professor": "لم يحدد بعد", "lecture_url": "غير متوفر حالياً"},
-        "group_theory": {"subject_name": "جبر الزمر", "professor": "لم يحدد بعد", "lecture_url": "غير متوفر حالياً"},
-        "fuzzy_math": {"subject_name": "رياضيات ضبابية", "professor": "لم يحدد بعد", "lecture_url": "غير متوفر حالياً"},
-        "arabic": {"subject_name": "اللغة العربية", "professor": "لم يحدد بعد", "lecture_url": "غير متوفر حالياً"},
-        "ai": {"subject_name": "الذكاء الاصطناعي", "professor": "لم يحدد بعد", "lecture_url": "غير متوفر حالياً"},
-        "operations_res": {"subject_name": "بحوث العمليات", "professor": "لم يحدد بعد", "lecture_url": "غير متوفر حالياً"},
+        "math_eng": {"subject_name": "رياضيات هندسية", "professor": "لم يحدد بعد", "lectures": []},
+        "group_theory": {"subject_name": "جبر الزمر", "professor": "لم يحدد بعد", "lectures": []},
+        "fuzzy_math": {"subject_name": "رياضيات ضبابية", "professor": "لم يحدد بعد", "lectures": []},
+        "arabic": {"subject_name": "اللغة العربية", "professor": "لم يحدد بعد", "lectures": []},
+        "ai": {"subject_name": "الذكاء الاصطناعي", "professor": "لم يحدد بعد", "lectures": []},
+        "operations_res": {"subject_name": "بحوث العمليات", "professor": "لم يحدد بعد", "lectures": []},
     }
 
+    # 1. قراءة أسماء التدريسيين والمواد من تبويب subjects_info
     try:
         encoded_info = urllib.parse.quote("subjects_info")
-
         df_info = pd.read_csv(BASE_URL + encoded_info, dtype=str)
         df_info.columns = df_info.columns.str.strip()
         for _, row in df_info.iterrows():
@@ -60,10 +61,24 @@ def load_all_academic_data():
             if key in default_subjects_info:
                 default_subjects_info[key]["subject_name"] = str(row.get("subject_name", default_subjects_info[key]["subject_name"])).strip()
                 default_subjects_info[key]["professor"] = str(row.get("professor", "لم يحدد")).strip()
-                default_subjects_info[key]["lecture_url"] = str(row.get("lecture_url", "غير متوفر")).strip()
     except Exception:
         pass
 
+    # 2. قراءة قائمة الملازم المتعددة من تبويب lectures
+    try:
+        encoded_lec = urllib.parse.quote("lectures")
+        df_lec = pd.read_csv(BASE_URL + encoded_lec, dtype=str)
+        df_lec.columns = df_lec.columns.str.strip()
+        for _, row in df_lec.iterrows():
+            key = str(row.get("subject_key", "")).strip()
+            title = str(row.get("lecture_title", "")).strip()
+            url = str(row.get("lecture_url", "")).strip()
+            if key in default_subjects_info and url.startswith("http"):
+                default_subjects_info[key]["lectures"].append({"title": title, "url": url})
+    except Exception:
+        pass
+
+    # 3. قراءة حسابات الطلاب
     try:
         encoded_accounts = urllib.parse.quote("حسابات_الطلاب")
         final_df = pd.read_csv(BASE_URL + encoded_accounts, dtype=str)
@@ -101,7 +116,7 @@ if "logged_in" not in st.session_state:
     st.session_state.student_row = None
 
 if not st.session_state.logged_in:
-    st.markdown("<h2 style='text-align: center; color: #f97316;'>كلية علوم الحاسوب والرياضيات</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #f97316;'>🏛️ كلية علوم الحاسوب والرياضيات</h2>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #a89990;'>Log in</p>", unsafe_allow_html=True)
 
     input_user = st.text_input("Username:").strip()
@@ -123,7 +138,7 @@ current_student = st.session_state.student_row
 
 header_html = (
     "<div style='text-align: center; background-color: #17100c; padding: 14px; border-radius: 12px; border: 1px solid #2e1d14; margin-bottom: 15px;'>"
-    "<h3 style='color: #f97316; margin: 0;'>🏛️ كلية علوم الحاسوب والرياضيات</h3>"
+    "<h3 style='color: #f97316; margin: 0;'> كلية علوم الحاسوب والرياضيات</h3>"
     "</div>"
 )
 st.markdown(header_html, unsafe_allow_html=True)
@@ -197,8 +212,8 @@ rules_list = [
     "أنت المساعد الأكاديمي الافتراضي لـ كلية علوم الحاسوب والرياضيات (قسم الرياضيات) في مسار بولونيا. مطورك هو علي حكمت حسن.",
     "1. التفاعل الفردي: أجب بسلاسة وود عن درجات الطالب وغياباته وسعيه ومستواه الأكاديمي.",
     "2. نطاق الصلاحيات: المواد الست (الرياضيات الهندسية، جبر الزمر، الرياضيات الضبابية، اللغة العربية، الذكاء الاصطناعي، بحوث العمليات) من حيث الدرجات، السعي، الغيابات، أسماء التدريسيين، الكويزات، الواجبات، والملازم.",
-    "3. الملازم والتدريسيين: استخدم قائمة معلومات_المواد لمعرفة اسم التدريسي (professor) ورابط الملزمة (lecture_url).",
-    "إذا طلب الطالب ملزمة مادة، أعطه الرابط بصيغة Markdown هكذا: [📥 تحميل ملزمة المادة](الرابط). وإذا كان غير متوفر أخبره بلطف.",
+    "3. الملازم والتدريسيين: استخدم قائمة معلومات_المواد لمعرفة اسم التدريسي (professor) وقائمة الملازم (lectures).",
+    "إذا طلب الطالب ملازم مادة معينة، اعرض له جميع الملازم المتوفرة لتلك المادة في القائمة، وضع رابط كل ملزمة بصيغة Markdown هكذا: [📥 اسم الملزمة](الرابط). وإذا كانت القائمة فارغة أخبره بلطف أن الملازم لم تُرفع بعد.",
     "4. الغيابات: أعمدة attendance تمثل عدد أيام الغياب الفعلي. اذكر الرقم الصافي فقط دون شرح نظام بولونيا. (3 فأكثر إنذار أول، 5 تحذير ثانٍ، 7 فصل).",
     "5. خط أحمر: إذا طلب حل مسألة أو واجب أو تقرير أو شرح درس، اعتذر بلطف وأخبره أن مهمتك هي استعراض البيانات الأكاديمية والملزمات فقط.",
     "6. لا تذكر لقب أبو لينا أبداً واكتفِ بذكر اسم المطور علي حكمت حسن."
@@ -238,7 +253,7 @@ if user_query := st.chat_input("اسأل عن درجاتك، غياباتك، ا
 
     chat_prompt = (
         f"{STRICT_ACADEMIC_RULES}\n\n"
-        f"معلومات المواد:\n{str(subjects_info)}\n\n"
+        f"معلومات المواد والملازم:\n{str(subjects_info)}\n\n"
         f"بيانات الطالب:\n{str(current_student)}\n\n"
         f"المحادثة:\n{conversation_context}"
     )
