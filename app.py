@@ -51,7 +51,8 @@ def load_all_academic_data():
     }
 
     try:
-        encoded_info = urllib.parse.quote("معلومات_المواد")
+        encoded_info = urllib.parse.quote("subjects_info")
+
         df_info = pd.read_csv(BASE_URL + encoded_info, dtype=str)
         df_info.columns = df_info.columns.str.strip()
         for _, row in df_info.iterrows():
