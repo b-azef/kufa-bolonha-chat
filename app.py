@@ -100,7 +100,7 @@ if "logged_in" not in st.session_state:
     st.session_state.student_row = None
 
 if not st.session_state.logged_in:
-    st.markdown("<h2 style='text-align: center; color: #f97316;'>🏛️ كلية علوم الحاسوب والرياضيات</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #f97316;'>كلية علوم الحاسوب والرياضيات</h2>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #a89990;'>Log in</p>", unsafe_allow_html=True)
 
     input_user = st.text_input("Username:").strip()
