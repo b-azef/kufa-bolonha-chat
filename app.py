@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 
 st.set_page_config(
-    page_title="مساعد جامعة الكوفة - كلية علوم الحاسوب والرياضيات",
+    page_title="كلية علوم الحاسوب والرياضيات",
     page_icon="🏛️",
     layout="centered",
 )
@@ -101,8 +101,7 @@ if "logged_in" not in st.session_state:
     st.session_state.student_row = None
 
 if not st.session_state.logged_in:
-    st.markdown("<h2 style='text-align: center; color: white; margin-bottom: 5px;'>🏛️ جامعة الكوفة</h2>", unsafe_allow_html=True)
-    st.markdown("<h4 style='text-align: center; color: #f97316; margin-top: 0;'>كلية علوم الحاسوب والرياضيات - بوابة مسار بولونيا</h4>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #f97316;'>🏛️ كلية علوم الحاسوب والرياضيات</h2>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #a89990;'>Log in</p>", unsafe_allow_html=True)
 
     input_user = st.text_input("Username:").strip()
@@ -123,16 +122,15 @@ if not st.session_state.logged_in:
 current_student = st.session_state.student_row
 
 header_html = (
-    "<div style='text-align: center; background-color: #17100c; padding: 12px; border-radius: 12px; border: 1px solid #2e1d14; margin-bottom: 15px;'>"
-    "<h4 style='color: #f97316; margin: 0;'>🏛️ جامعة الكوفة - كلية علوم الحاسوب والرياضيات</h4>"
-    "<p style='color: #d6c3b8; font-size: 13px; margin: 4px 0 0 0;'>قسم الرياضيات | المساعد الذكي لمسار بولونيا</p>"
+    "<div style='text-align: center; background-color: #17100c; padding: 14px; border-radius: 12px; border: 1px solid #2e1d14; margin-bottom: 15px;'>"
+    "<h3 style='color: #f97316; margin: 0;'>🏛️ كلية علوم الحاسوب والرياضيات</h3>"
     "</div>"
 )
 st.markdown(header_html, unsafe_allow_html=True)
 
 col_name, col_logout = st.columns([4, 1])
 with col_name:
-    st.markdown(f"<h3 style='color: white; margin:0;'>مرحباً بك: {current_student.get('student_name', 'طالب جامعة الكوفة')} 👋</h3>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='color: white; margin:0;'>مرحباً بك: {current_student.get('student_name', 'طالبنا العزيز')} 👋</h3>", unsafe_allow_html=True)
 with col_logout:
     if st.button("خروج 🚪", use_container_width=True):
         st.session_state.logged_in = False
@@ -195,14 +193,62 @@ for row in range(2):
 
 st.markdown("---")
 
-STRICT_ACADEMIC_RULES = (
-    "أنت المساعد الأكاديمي الافتراضي لجامعة الكوفة - كلية علوم الحاسوب والرياضيات (قسم الرياضيات) في مسار بولونيا. مطورك هو علي حكمت حسن من قسم الرياضيات.\n"
-    "التوجيهات والمهام الوظيفية المحددة لك:\n"
-    "1. التفاعل الفردي: عندما يسألك الطالب عن نفسه، درجاته، غياباته، أو مستواه الأكاديمي، أجب بسلاسة، ود، وطبيعية كاملة. قم بتحليل درجاته وسعيه الحالي لتشجيعه أو إعطائه نصيحة أكاديمية مفيدة بأسلوب مرن وراقٍ.\n"
-    "2. نطاق صلاحياتك الحصري: تخصصك هو عرض ومناقشة تفاصيل المواد الست (الرياضيات الهندسية، جبر الزمر، الرياضيات الضبابية، اللغة العربية، الذكاء الاصطناعي، وبحوث العمليات) من حيث: (الدرجات، السعي السنوي من 50، غيابات المواد، أسماء التدريسيين، الكويزات، الواجبات homework، جداول المحاضرات، ونظام الملازم الرقمية).\n"
-    "3. الملازم وأسماء التدريسيين:\n"
-    "- لديك في السياق أدناه قائمة معلومات_المواد وتحتوي على اسم التدريسي (professor) ورابط الملزمة (lecture_url) لكل مادة.\n"
-    "- إذا سألك الطالب عن اسم أستاذ/تدريسي مادة معينة، أجب باسمه مباشرة من القائمة.\n"
-    "- إذا طلب الطالب ملزمة أو محاضرات مادة معينة، أعطه رابط التحميل الخاص بها بصيغة Markdown هكذا: [📥 تحميل ملزمة المادة](الرابط). وإذا كان الرابط غير متوفر حالياً، أخبره بلطف أن الملزمة لم تُرفع بعد.\n"
-    "4. التعامل مع الغيابات:\n"
-    "- أعمدة الـ attendance تمثل عدد أيام الغياب الف
+rules_list = [
+    "أنت المساعد الأكاديمي الافتراضي لـ كلية علوم الحاسوب والرياضيات (قسم الرياضيات) في مسار بولونيا. مطورك هو علي حكمت حسن.",
+    "1. التفاعل الفردي: أجب بسلاسة وود عن درجات الطالب وغياباته وسعيه ومستواه الأكاديمي.",
+    "2. نطاق الصلاحيات: المواد الست (الرياضيات الهندسية، جبر الزمر، الرياضيات الضبابية، اللغة العربية، الذكاء الاصطناعي، بحوث العمليات) من حيث الدرجات، السعي، الغيابات، أسماء التدريسيين، الكويزات، الواجبات، والملازم.",
+    "3. الملازم والتدريسيين: استخدم قائمة معلومات_المواد لمعرفة اسم التدريسي (professor) ورابط الملزمة (lecture_url).",
+    "إذا طلب الطالب ملزمة مادة، أعطه الرابط بصيغة Markdown هكذا: [📥 تحميل ملزمة المادة](الرابط). وإذا كان غير متوفر أخبره بلطف.",
+    "4. الغيابات: أعمدة attendance تمثل عدد أيام الغياب الفعلي. اذكر الرقم الصافي فقط دون شرح نظام بولونيا. (3 فأكثر إنذار أول، 5 تحذير ثانٍ، 7 فصل).",
+    "5. خط أحمر: إذا طلب حل مسألة أو واجب أو تقرير أو شرح درس، اعتذر بلطف وأخبره أن مهمتك هي استعراض البيانات الأكاديمية والملزمات فقط.",
+    "6. لا تذكر لقب أبو لينا أبداً واكتفِ بذكر اسم المطور علي حكمت حسن."
+]
+STRICT_ACADEMIC_RULES = "\n".join(rules_list)
+
+if "chat_history" not in st.session_state or st.session_state.chat_history is None:
+    student_name = current_student.get("student_name", "طالبنا العزيز")
+    welcome_msg = f"أهلاً بك يا {student_name} في مساعد كلية علوم الحاسوب والرياضيات. كيف يمكنني مساعدتك اليوم؟"
+    st.session_state.chat_history = [{"role": "assistant", "content": welcome_msg}]
+
+
+def format_links_to_html(text):
+    return re.sub(
+        r"\[([^\]]+)\]\((https?://[^\)]+)\)",
+        r'<br><a href="\2" target="_blank">\1</a>',
+        text,
+    )
+
+
+if isinstance(st.session_state.chat_history, list):
+    chat_html = '<div class="chat-box">'
+    for msg in st.session_state.chat_history:
+        role_class = "user" if msg["role"] == "user" else "assistant"
+        formatted_content = format_links_to_html(msg["content"])
+        chat_html += f'<div class="msg-wrapper {role_class}"><div class="bubble">{formatted_content}</div></div>'
+    chat_html += "</div>"
+    st.markdown(chat_html, unsafe_allow_html=True)
+
+if user_query := st.chat_input("اسأل عن درجاتك، غياباتك، التدريسيين أو الملازم..."):
+    st.session_state.chat_history.append({"role": "user", "content": user_query})
+
+    conversation_context = ""
+    for msg in st.session_state.chat_history:
+        role_label = "الطالب" if msg["role"] == "user" else "المساعد"
+        conversation_context += f"{role_label}: {msg['content']}\n"
+
+    chat_prompt = (
+        f"{STRICT_ACADEMIC_RULES}\n\n"
+        f"معلومات المواد:\n{str(subjects_info)}\n\n"
+        f"بيانات الطالب:\n{str(current_student)}\n\n"
+        f"المحادثة:\n{conversation_context}"
+    )
+
+    with st.spinner("🤖 جاري التفكير والكتابة..."):
+        try:
+            reply = client.models.generate_content(
+                model="gemini-2.5-flash", contents=chat_prompt
+            ).text
+            st.session_state.chat_history.append({"role": "assistant", "content": reply})
+            st.rerun()
+        except Exception as e:
+            st.error(f"خطأ في الاتصال: {e}")
