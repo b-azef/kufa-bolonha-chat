@@ -5,7 +5,7 @@ import streamlit as st
 
 # 1. إعدادات المظهر المظلم الكامل والمستقر
 st.set_page_config(
-    page_title="مساعد جامعة الكوفة - كلية علوم الحاسوب والرياضيات",
+    page_title=" كلية علوم الحاسوب والرياضيات",
     page_icon="🏛️",
     layout="centered",
 )
@@ -24,7 +24,7 @@ st.markdown(
     
     /* لون رسالة المساعد (أزرق أكاديمي متدرج) */
     .assistant .bubble { 
-        background: linear-gradient(135deg, #1d4ed8 0%, #0ea5e9 100%) !important; 
+        background: linear-gradient(135deg, #1d4ed8 0%, #FFB347 100%) !important; 
         border-bottom-left-radius: 4px; 
         box-shadow: 0 4px 14px rgba(14, 165, 233, 0.25); 
     }
