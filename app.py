@@ -78,7 +78,16 @@ def load_all_academic_data():
     except Exception:
         pass
 
-    # 3. قراءة حسابات الطلاب
+    # 3. قراءة الجدول الأسبوعي من تبويب schedule
+    df_schedule = pd.DataFrame()
+    try:
+        encoded_sched = urllib.parse.quote("schedule")
+        df_schedule = pd.read_csv(BASE_URL + encoded_sched, dtype=str)
+        df_schedule.columns = df_schedule.columns.str.strip()
+    except Exception:
+        pass
+
+    # 4. قراءة حسابات الطلاب
     try:
         encoded_accounts = urllib.parse.quote("حسابات_الطلاب")
         final_df = pd.read_csv(BASE_URL + encoded_accounts, dtype=str)
@@ -89,6 +98,7 @@ def load_all_academic_data():
         return (
             pd.DataFrame([{"username": "111111", "password": "123", "student_name": "علي حكمت حسن"}]),
             default_subjects_info,
+            df_schedule,
         )
 
     materials = ["math_eng", "group_theory", "fuzzy_math", "arabic", "ai", "operations_res"]
@@ -106,10 +116,10 @@ def load_all_academic_data():
         except Exception:
             continue
 
-    return final_df, default_subjects_info
+    return final_df, default_subjects_info, df_schedule
 
 
-df_students, subjects_info = load_all_academic_data()
+df_students, subjects_info, df_schedule = load_all_academic_data()
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -138,7 +148,7 @@ current_student = st.session_state.student_row
 
 header_html = (
     "<div style='text-align: center; background-color: #17100c; padding: 14px; border-radius: 12px; border: 1px solid #2e1d14; margin-bottom: 15px;'>"
-    "<h3 style='color: #f97316; margin: 0;'> كلية علوم الحاسوب والرياضيات</h3>"
+    "<h3 style='color: #f97316; margin: 0;'>🏛️ كلية علوم الحاسوب والرياضيات</h3>"
     "</div>"
 )
 st.markdown(header_html, unsafe_allow_html=True)
@@ -206,17 +216,29 @@ for row in range(2):
             st.progress(progress_val)
             st.markdown(f"<p style='text-align: center; font-size: 12px; margin-top: -10px; color: #d6c3b8;'>{status}</p>", unsafe_allow_html=True)
 
+# 📅 عرض الجدول الأسبوعي في قائمة قابلة للطي
+if not df_schedule.empty:
+    with st.expander("📅 عرض الجدول الأسبوعي للمحاضرات"):
+        display_df = df_schedule.rename(columns={
+            "day": "اليوم",
+            "time": "الوقت",
+            "subject_name": "المادة",
+            "hall": "القاعة"
+        })
+        st.dataframe(display_df, use_container_width=True, hide_index=True)
+
 st.markdown("---")
 
 rules_list = [
     "أنت المساعد الأكاديمي الافتراضي لـ كلية علوم الحاسوب والرياضيات (قسم الرياضيات) في مسار بولونيا. مطورك هو علي حكمت حسن.",
     "1. التفاعل الفردي: أجب بسلاسة وود عن درجات الطالب وغياباته وسعيه ومستواه الأكاديمي.",
-    "2. نطاق الصلاحيات: المواد الست (الرياضيات الهندسية، جبر الزمر، الرياضيات الضبابية، اللغة العربية، الذكاء الاصطناعي، بحوث العمليات) من حيث الدرجات، السعي، الغيابات، أسماء التدريسيين، الكويزات، الواجبات، والملازم.",
+    "2. نطاق الصلاحيات: المواد الست (الرياضيات الهندسية، جبر الزمر، الرياضيات الضبابية، اللغة العربية، الذكاء الاصطناعي، بحوث العمليات) من حيث الدرجات، السعي، الغيابات، أسماء التدريسيين، الكويزات، الواجبات، الجدول الأسبوعي، والملازم.",
     "3. الملازم والتدريسيين: استخدم قائمة معلومات_المواد لمعرفة اسم التدريسي (professor) وقائمة الملازم (lectures).",
-    "إذا طلب الطالب ملازم مادة معينة، اعرض له جميع الملازم المتوفرة لتلك المادة في القائمة، وضع رابط كل ملزمة بصيغة Markdown هكذا: [📥 اسم الملزمة](الرابط). وإذا كانت القائمة فارغة أخبره بلطف أن الملازم لم تُرفع بعد.",
-    "4. الغيابات: أعمدة attendance تمثل عدد أيام الغياب الفعلي. اذكر الرقم الصافي فقط دون شرح نظام بولونيا. (3 فأكثر إنذار أول، 5 تحذير ثانٍ، 7 فصل).",
-    "5. خط أحمر: إذا طلب حل مسألة أو واجب أو تقرير أو شرح درس، اعتذر بلطف وأخبره أن مهمتك هي استعراض البيانات الأكاديمية والملزمات فقط.",
-    "6. لا تذكر لقب أبو لينا أبداً واكتفِ بذكر اسم المطور علي حكمت حسن."
+    "إذا طلب الطالب ملازم مادة معينة، اعرض له جميع الملازم المتوفرة لتلك المادة، وضع رابط كل ملزمة بصيغة Markdown هكذا: [📥 اسم الملزمة](الرابط). وإذا كانت القائمة فارغة أخبره بلطف أن الملازم لم تُرفع بعد.",
+    "4. الجدول الأسبوعي: استخدم قائمة الجدول_الاسبوعي للإجابة عن مواعيد المحاضرات والأيام والقاعات الدراسية.",
+    "5. الغيابات: أعمدة attendance تمثل عدد أيام الغياب الفعلي. اذكر الرقم الصافي فقط دون شرح نظام بولونيا. (3 فأكثر إنذار أول، 5 تحذير ثانٍ، 7 فصل).",
+    "6. خط أحمر: إذا طلب حل مسألة أو واجب أو تقرير أو شرح درس، اعتذر بلطف وأخبره أن مهمتك هي استعراض البيانات الأكاديمية والملزمات والجدول فقط.",
+    "7. لا تذكر لقب أبو لينا أبداً واكتفِ بذكر اسم المطور علي حكمت حسن."
 ]
 STRICT_ACADEMIC_RULES = "\n".join(rules_list)
 
@@ -243,7 +265,7 @@ if isinstance(st.session_state.chat_history, list):
     chat_html += "</div>"
     st.markdown(chat_html, unsafe_allow_html=True)
 
-if user_query := st.chat_input("اسأل عن درجاتك، غياباتك، التدريسيين أو الملازم..."):
+if user_query := st.chat_input("اسأل عن درجاتك، غياباتك، الجدول، التدريسيين أو الملازم..."):
     st.session_state.chat_history.append({"role": "user", "content": user_query})
 
     conversation_context = ""
@@ -251,9 +273,12 @@ if user_query := st.chat_input("اسأل عن درجاتك، غياباتك، ا
         role_label = "الطالب" if msg["role"] == "user" else "المساعد"
         conversation_context += f"{role_label}: {msg['content']}\n"
 
+    schedule_records = df_schedule.to_dict(orient="records") if not df_schedule.empty else "غير متوفر حالياً"
+
     chat_prompt = (
         f"{STRICT_ACADEMIC_RULES}\n\n"
         f"معلومات المواد والملازم:\n{str(subjects_info)}\n\n"
+        f"الجدول_الاسبوعي:\n{str(schedule_records)}\n\n"
         f"بيانات الطالب:\n{str(current_student)}\n\n"
         f"المحادثة:\n{conversation_context}"
     )
