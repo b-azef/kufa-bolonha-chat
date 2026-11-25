@@ -1,3 +1,6 @@
+import base64
+import html
+import os
 import re
 import urllib.parse
 from google import genai
@@ -6,24 +9,37 @@ import streamlit as st
 
 st.set_page_config(
     page_title="كلية علوم الحاسوب والرياضيات",
+    page_icon="🏛️",
     layout="centered",
 )
 
+
+def get_logo_html(image_path="logo.png", width="85px"):
+    if os.path.exists(image_path):
+        with open(image_path, "rb") as img_file:
+            b64_str = base64.b64encode(img_file.read()).decode()
+        return f"<img src='data:image/png;base64,{b64_str}' style='width: {width}; height: {width}; object-fit: contain; border-radius: 50%; margin-bottom: 8px; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);'>"
+    return "<div style='font-size: 48px; margin-bottom: 5px;'>🏛️</div>"
+
+
+logo_login_html = get_logo_html("logo.png", "95px")
+logo_header_html = get_logo_html("logo.png", "65px")
+
 css_style = (
     "<style>"
-    ".stApp { background-color: #0d0907 !important; }"
+    ".stApp { background: radial-gradient(circle at top, #2c1810 0%, #160e0a 55%, #0e0907 100%) !important; }"
     "header { visibility: hidden !important; }"
-    ".chat-box { display: flex; flex-direction: column; gap: 15px; padding: 20px; background-color: #0d0907 !important; }"
+    ".chat-box { display: flex; flex-direction: column; gap: 15px; padding: 20px; background: transparent !important; }"
     ".msg-wrapper { display: flex; width: 100%; }"
     ".msg-wrapper.assistant { justify-content: flex-end; }"
     ".msg-wrapper.user { justify-content: flex-start; }"
     ".bubble { padding: 14px 18px; border-radius: 18px; font-size: 16px; max-width: 82%; color: white; line-height: 1.6; }"
     ".assistant .bubble { background: linear-gradient(135deg, #f59e0b 0%, #ea580c 50%, #b91c1c 100%) !important; border-bottom-left-radius: 4px; box-shadow: 0 4px 15px rgba(234, 88, 12, 0.35); }"
     ".assistant .bubble a { display: inline-block; margin-top: 6px; margin-bottom: 4px; padding: 6px 14px; background-color: #1c1008; color: #fbbf24 !important; text-decoration: none; border-radius: 8px; font-weight: bold; border: 1px solid #fbbf24; }"
-    ".user .bubble { background-color: #261811 !important; border: 1px solid #452718 !important; border-bottom-right-radius: 4px; }"
-    "div[data-testid='stTextInput'] input { background-color: #17100c !important; color: white !important; border: 1px solid #452718 !important; border-radius: 10px !important; }"
-    "div[data-testid='stMetric'] { background-color: #17100c !important; border: 1px solid #2e1d14 !important; padding: 15px !important; border-radius: 12px !important; text-align: center !important; }"
-    "div[data-testid='stMetricLabel'] { color: #d6c3b8 !important; font-size: 14px !important; }"
+    ".user .bubble { background-color: rgba(45, 28, 20, 0.85) !important; border: 1px solid #573322 !important; border-bottom-right-radius: 4px; backdrop-filter: blur(6px); }"
+    "div[data-testid='stTextInput'] input { background-color: rgba(30, 19, 14, 0.9) !important; color: white !important; border: 1px solid #573322 !important; border-radius: 10px !important; }"
+    "div[data-testid='stMetric'] { background-color: rgba(32, 20, 14, 0.75) !important; border: 1px solid #452718 !important; padding: 15px !important; border-radius: 14px !important; text-align: center !important; backdrop-filter: blur(6px); }"
+    "div[data-testid='stMetricLabel'] { color: #e2cfc4 !important; font-size: 14px !important; }"
     "div[data-testid='stMetricValue'] { color: #ffffff !important; font-size: 22px !important; font-weight: bold !important; }"
     "</style>"
 )
@@ -50,7 +66,6 @@ def load_all_academic_data():
         "operations_res": {"subject_name": "بحوث العمليات", "professor": "لم يحدد بعد", "lectures": []},
     }
 
-    # 1. قراءة أسماء التدريسيين والمواد من تبويب subjects_info
     try:
         encoded_info = urllib.parse.quote("subjects_info")
         df_info = pd.read_csv(BASE_URL + encoded_info, dtype=str)
@@ -63,7 +78,6 @@ def load_all_academic_data():
     except Exception:
         pass
 
-    # 2. قراءة قائمة الملازم المتعددة من تبويب lectures
     try:
         encoded_lec = urllib.parse.quote("lectures")
         df_lec = pd.read_csv(BASE_URL + encoded_lec, dtype=str)
@@ -77,7 +91,6 @@ def load_all_academic_data():
     except Exception:
         pass
 
-    # 3. قراءة الجدول الأسبوعي من تبويب schedule
     df_schedule = pd.DataFrame()
     try:
         encoded_sched = urllib.parse.quote("schedule")
@@ -86,7 +99,6 @@ def load_all_academic_data():
     except Exception:
         pass
 
-    # 4. قراءة حسابات الطلاب
     try:
         encoded_accounts = urllib.parse.quote("حسابات_الطلاب")
         final_df = pd.read_csv(BASE_URL + encoded_accounts, dtype=str)
@@ -125,8 +137,9 @@ if "logged_in" not in st.session_state:
     st.session_state.student_row = None
 
 if not st.session_state.logged_in:
-    st.markdown("<h2 style='text-align: center; color: #f97316;'>كلية علوم الحاسوب والرياضيات</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #a89990;'>Log in</p>", unsafe_allow_html=True)
+    st.markdown(f"<div style='text-align: center;'>{logo_login_html}</div>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #f97316; margin-top: 0;'>كلية علوم الحاسوب والرياضيات</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #c4b0a5;'>Log in</p>", unsafe_allow_html=True)
 
     input_user = st.text_input("Username:").strip()
     input_pass = st.text_input("Password:", type="password").strip()
@@ -146,8 +159,9 @@ if not st.session_state.logged_in:
 current_student = st.session_state.student_row
 
 header_html = (
-    "<div style='text-align: center; background-color: #17100c; padding: 14px; border-radius: 12px; border: 1px solid #2e1d14; margin-bottom: 15px;'>"
-    "<h3 style='color: #f97316; margin: 0;'>🏛️ كلية علوم الحاسوب والرياضيات</h3>"
+    "<div style='text-align: center; background-color: rgba(32, 20, 14, 0.75); padding: 16px; border-radius: 16px; border: 1px solid #452718; margin-bottom: 15px; backdrop-filter: blur(6px);'>"
+    f"{logo_header_html}"
+    "<h3 style='color: #f97316; margin: 0;'>كلية علوم الحاسوب والرياضيات</h3>"
     "</div>"
 )
 st.markdown(header_html, unsafe_allow_html=True)
@@ -213,9 +227,8 @@ for row in range(2):
             st.metric(label=title, value=f"{days} / 7 أيام")
             st.markdown(f"<p style='text-align: center; font-size: 13px; color: #fb923c; margin-top: -12px; margin-bottom: 6px;'>👨‍🏫 {prof_name}</p>", unsafe_allow_html=True)
             st.progress(progress_val)
-            st.markdown(f"<p style='text-align: center; font-size: 12px; margin-top: -10px; color: #d6c3b8;'>{status}</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='text-align: center; font-size: 12px; margin-top: -10px; color: #e2cfc4;'>{status}</p>", unsafe_allow_html=True)
 
-# 📅 عرض الجدول الأسبوعي في قائمة قابلة للطي
 if not df_schedule.empty:
     with st.expander("📅 عرض الجدول الأسبوعي للمحاضرات"):
         display_df = df_schedule.rename(columns={
@@ -247,11 +260,13 @@ if "chat_history" not in st.session_state or st.session_state.chat_history is No
     st.session_state.chat_history = [{"role": "assistant", "content": welcome_msg}]
 
 
-def format_links_to_html(text):
+# دالة تنظيف النص أولاً لحماية HTML ثم تحويل روابط Markdown إلى أزرار آمنة
+def format_safe_message(text):
+    escaped_text = html.escape(text).replace("\n", "<br>")
     return re.sub(
         r"\[([^\]]+)\]\((https?://[^\)]+)\)",
-        r'<br><a href="\2" target="_blank">\1</a>',
-        text,
+        r'<br><a href="\2" target="_blank" rel="noopener noreferrer">\1</a>',
+        escaped_text,
     )
 
 
@@ -259,18 +274,23 @@ if isinstance(st.session_state.chat_history, list):
     chat_html = '<div class="chat-box">'
     for msg in st.session_state.chat_history:
         role_class = "user" if msg["role"] == "user" else "assistant"
-        formatted_content = format_links_to_html(msg["content"])
-        chat_html += f'<div class="msg-wrapper {role_class}"><div class="bubble">{formatted_content}</div></div>'
+        safe_content = format_safe_message(msg["content"])
+        chat_html += f'<div class="msg-wrapper {role_class}"><div class="bubble">{safe_content}</div></div>'
     chat_html += "</div>"
     st.markdown(chat_html, unsafe_allow_html=True)
 
 if user_query := st.chat_input("اسأل عن درجاتك، غياباتك، الجدول، التدريسيين أو الملازم..."):
     st.session_state.chat_history.append({"role": "user", "content": user_query})
 
+    # إرسال آخر 6 رسائل فقط لتقليل استهلاك التوكنز وتسريع الاستجابة
+    recent_messages = st.session_state.chat_history[-6:]
     conversation_context = ""
-    for msg in st.session_state.chat_history:
+    for msg in recent_messages:
         role_label = "الطالب" if msg["role"] == "user" else "المساعد"
         conversation_context += f"{role_label}: {msg['content']}\n"
+
+    # استبعاد كلمة المرور قبل إرسال بيانات الطالب للنموذج
+    safe_student = {k: v for k, v in current_student.items() if k != "password"}
 
     schedule_records = df_schedule.to_dict(orient="records") if not df_schedule.empty else "غير متوفر حالياً"
 
@@ -278,8 +298,8 @@ if user_query := st.chat_input("اسأل عن درجاتك، غياباتك، ا
         f"{STRICT_ACADEMIC_RULES}\n\n"
         f"معلومات المواد والملازم:\n{str(subjects_info)}\n\n"
         f"الجدول_الاسبوعي:\n{str(schedule_records)}\n\n"
-        f"بيانات الطالب:\n{str(current_student)}\n\n"
-        f"المحادثة:\n{conversation_context}"
+        f"بيانات الطالب:\n{str(safe_student)}\n\n"
+        f"المحادثة الأخيرة:\n{conversation_context}"
     )
 
     with st.spinner("🤖 جاري التفكير والكتابة..."):
