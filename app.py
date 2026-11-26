@@ -18,33 +18,33 @@ def get_logo_html(image_path="logo.png", width="85px"):
     if os.path.exists(image_path):
         with open(image_path, "rb") as img_file:
             b64_str = base64.b64encode(img_file.read()).decode()
-        return f"<img src='data:image/png;base64,{b64_str}' style='width: {width}; height: {width}; object-fit: contain; border-radius: 50%; margin-bottom: 8px; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);'>"
+        return f"<img src='data:image/png;base64,{b64_str}' style='width: {width}; height: {width}; object-fit: contain; border-radius: 50%; margin-bottom: 8px; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25);'>"
     return "<div style='font-size: 48px; margin-bottom: 5px;'>🏛️</div>"
 
 
 logo_login_html = get_logo_html("logo.png", "95px")
 logo_header_html = get_logo_html("logo.png", "65px")
 
+# 🎨 الخيار الثاني: خلفية الغروب الدافئ الناعم (تدرج أبيض دافئ إلى مشمشي فاتح سادة)
 css_style = (
     "<style>"
-    ".stApp { background-color: #fff8f1 !important; background-image: radial-gradient(#fdba74 1px, transparent 1px), radial-gradient(#fdba74 1px, #fff8f1 1px) !important; background-size: 32px 32px !important; background-position: 0 0, 16px 16px !important; }"
+    ".stApp { background: linear-gradient(180deg, #ffffff 0%, #fff7ed 50%, #ffedd5 100%) !important; }"
     "header { visibility: hidden !important; }"
     ".chat-box { display: flex; flex-direction: column; gap: 15px; padding: 20px; background: transparent !important; }"
     ".msg-wrapper { display: flex; width: 100%; }"
     ".msg-wrapper.assistant { justify-content: flex-end; }"
     ".msg-wrapper.user { justify-content: flex-start; }"
     ".bubble { padding: 14px 18px; border-radius: 18px; font-size: 16px; max-width: 82%; line-height: 1.6; }"
-    ".assistant .bubble { background: linear-gradient(135deg, #f59e0b 0%, #ea580c 60%, #c2410c 100%) !important; color: white !important; border-bottom-left-radius: 4px; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25); }"
+    ".assistant .bubble { background: linear-gradient(135deg, #f59e0b 0%, #ea580c 55%, #c2410c 100%) !important; color: white !important; border-bottom-left-radius: 4px; box-shadow: 0 4px 14px rgba(234, 88, 12, 0.25); }"
     ".assistant .bubble a { display: inline-block; margin-top: 6px; margin-bottom: 4px; padding: 6px 14px; background-color: #fff7ed; color: #c2410c !important; text-decoration: none; border-radius: 8px; font-weight: bold; border: 1px solid #fed7aa; }"
-    ".user .bubble { background-color: #ffffff !important; color: #1f2937 !important; border: 1px solid #fed7aa !important; border-bottom-right-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }"
+    ".user .bubble { background-color: #ffffff !important; color: #1f2937 !important; border: 1px solid #fed7aa !important; border-bottom-right-radius: 4px; box-shadow: 0 2px 8px rgba(234, 88, 12, 0.08); }"
     "div[data-testid='stTextInput'] input { background-color: #ffffff !important; color: #1f2937 !important; border: 1px solid #fdba74 !important; border-radius: 10px !important; }"
-    "div[data-testid='stMetric'] { background-color: rgba(255, 255, 255, 0.9) !important; border: 1px solid #fed7aa !important; padding: 15px !important; border-radius: 14px !important; text-align: center !important; box-shadow: 0 4px 10px rgba(234, 88, 12, 0.06); }"
+    "div[data-testid='stMetric'] { background-color: rgba(255, 255, 255, 0.85) !important; border: 1px solid #fed7aa !important; padding: 15px !important; border-radius: 14px !important; text-align: center !important; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.06); }"
     "div[data-testid='stMetricLabel'] { color: #7c2d12 !important; font-size: 14px !important; font-weight: bold !important; }"
     "div[data-testid='stMetricValue'] { color: #ea580c !important; font-size: 22px !important; font-weight: bold !important; }"
-    "h1, h2, h3, h4, p, label { color: #431407 !important; }"
+    "div[data-testid='stTextInput'] label p { color: #7c2d12 !important; font-weight: bold !important; }"
     "</style>"
 )
-
 st.markdown(css_style, unsafe_allow_html=True)
 
 if "GEMINI_API_KEY" in st.secrets:
@@ -137,8 +137,8 @@ if "logged_in" not in st.session_state:
 
 if not st.session_state.logged_in:
     st.markdown(f"<div style='text-align: center;'>{logo_login_html}</div>", unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align: center; color: #f97316; margin-top: 0; margin-bottom: 4px;'>قسم الرياضيات يرحب بكم</h2>", unsafe_allow_html=True)
-    st.markdown("<h4 style='text-align: center; color: #fbbf24; margin-top: 0; margin-bottom: 12px;'>برنامج معلومات الطالب</h4>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #c2410c; margin-top: 0; margin-bottom: 4px;'>قسم الرياضيات يرحب بكم</h2>", unsafe_allow_html=True)
+    st.markdown("<h4 style='text-align: center; color: #ea580c; margin-top: 0; margin-bottom: 12px;'>برنامج معلومات الطالب</h4>", unsafe_allow_html=True)
 
     input_user = st.text_input("Username:").strip()
     input_pass = st.text_input("Password:", type="password").strip()
@@ -158,16 +158,16 @@ if not st.session_state.logged_in:
 current_student = st.session_state.student_row
 
 header_html = (
-    "<div style='text-align: center; background-color: rgba(32, 20, 14, 0.75); padding: 16px; border-radius: 16px; border: 1px solid #452718; margin-bottom: 15px; backdrop-filter: blur(6px);'>"
+    "<div style='text-align: center; background-color: rgba(255, 255, 255, 0.85); padding: 16px; border-radius: 16px; border: 1px solid #fed7aa; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.08);'>"
     f"{logo_header_html}"
-    "<h3 style='color: #f97316; margin: 0;'>كلية علوم الحاسوب والرياضيات</h3>"
+    "<h3 style='color: #c2410c; margin: 0;'>كلية علوم الحاسوب والرياضيات</h3>"
     "</div>"
 )
 st.markdown(header_html, unsafe_allow_html=True)
 
 col_name, col_logout = st.columns([4, 1])
 with col_name:
-    st.markdown(f"<h3 style='color: white; margin:0;'>مرحباً بك: {current_student.get('student_name', 'طالبنا العزيز')} 👋</h3>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='color: #431407; margin:0;'>مرحباً بك: {current_student.get('student_name', 'طالبنا العزيز')} 👋</h3>", unsafe_allow_html=True)
 with col_logout:
     if st.button("خروج 🚪", use_container_width=True):
         st.session_state.logged_in = False
@@ -175,7 +175,7 @@ with col_logout:
         st.rerun()
 
 st.markdown("---")
-st.markdown("<h4 style='color: #f97316;'>📊 موقف غيابات المواد الحالي:</h4>", unsafe_allow_html=True)
+st.markdown("<h4 style='color: #c2410c;'>📊 موقف غيابات المواد الحالي:</h4>", unsafe_allow_html=True)
 
 
 def get_attendance_progress(val_str):
@@ -224,9 +224,9 @@ for row in range(2):
 
         with cols[col_idx]:
             st.metric(label=title, value=f"{days} / 7 أيام")
-            st.markdown(f"<p style='text-align: center; font-size: 13px; color: #fb923c; margin-top: -12px; margin-bottom: 6px;'>👨‍🏫 {prof_name}</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='text-align: center; font-size: 13px; color: #c2410c; font-weight: bold; margin-top: -12px; margin-bottom: 6px;'>👨‍🏫 {prof_name}</p>", unsafe_allow_html=True)
             st.progress(progress_val)
-            st.markdown(f"<p style='text-align: center; font-size: 12px; margin-top: -10px; color: #e2cfc4;'>{status}</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='text-align: center; font-size: 12px; margin-top: -10px; color: #7c2d12;'>{status}</p>", unsafe_allow_html=True)
 
 if not df_schedule.empty:
     with st.expander("📅 عرض الجدول الأسبوعي للمحاضرات"):
