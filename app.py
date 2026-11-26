@@ -38,14 +38,15 @@ css_style = (
     ".assistant .bubble a { display: inline-block; margin-top: 6px; margin-bottom: 4px; padding: 6px 14px; background-color: #fff7ed; color: #c2410c !important; text-decoration: none; border-radius: 8px; font-weight: bold; border: 1px solid #fed7aa; }"
     ".user .bubble { background-color: #ffffff !important; color: #1f2937 !important; border: 1px solid #fed7aa !important; border-bottom-right-radius: 4px; box-shadow: 0 2px 8px rgba(234, 88, 12, 0.08); }"
     "div[data-testid='stTextInput'] input { background-color: #ffffff !important; color: #1f2937 !important; border: 1px solid #fdba74 !important; border-radius: 10px !important; }"
-    "div[data-testid='stMetric'] { background-color: rgba(255, 255, 255, 0.9) !important; border: 1px solid #fed7aa !important; padding: 15px !important; border-radius: 14px !important; text-align: center !important; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.06); }"
-    "div[data-testid='stMetricLabel'] { color: #7c2d12 !important; font-size: 14px !important; font-weight: bold !important; }"
-    "div[data-testid='stMetricValue'] { color: #ea580c !important; font-size: 22px !important; font-weight: bold !important; }"
     "div[data-testid='stTextInput'] label p { color: #7c2d12 !important; font-weight: bold !important; }"
+    "div[data-testid='stMetric'] { background-color: #ffffff !important; border: 1px solid #fdba74 !important; padding: 15px !important; border-radius: 14px !important; text-align: center !important; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.08); }"
+    "div[data-testid='stMetricLabel'], div[data-testid='stMetricLabel'] * { color: #431407 !important; font-size: 15px !important; font-weight: 800 !important; justify-content: center !important; opacity: 1 !important; }"
+    "div[data-testid='stMetricValue'], div[data-testid='stMetricValue'] * { color: #ea580c !important; font-size: 22px !important; font-weight: bold !important; justify-content: center !important; }"
     "div[data-testid='stExpander'] { background-color: #ffffff !important; border: 1px solid #fdba74 !important; border-radius: 12px !important; box-shadow: 0 3px 10px rgba(234, 88, 12, 0.08) !important; }"
-    "div[data-testid='stExpander'] summary { color: #9a3412 !important; font-weight: bold !important; font-size: 16px !important; }"
-    "div[data-testid='stExpander'] summary p { color: #9a3412 !important; font-weight: bold !important; }"
+    "div[data-testid='stExpander'] summary, div[data-testid='stExpander'] summary * { color: #9a3412 !important; font-weight: bold !important; font-size: 16px !important; }"
     "div[data-testid='stExpander'] summary svg { fill: #c2410c !important; }"
+    ".stButton button { background-color: #ea580c !important; color: #ffffff !important; border: none !important; border-radius: 10px !important; font-weight: bold !important; }"
+    ".stButton button:hover { background-color: #c2410c !important; color: #ffffff !important; }"
     ".schedule-table { width: 100%; border-collapse: collapse; direction: rtl; text-align: center; font-size: 14px; border-radius: 10px; overflow: hidden; }"
     ".schedule-table th { background-color: #ea580c; color: #ffffff; padding: 10px 8px; font-weight: bold; border: 1px solid #fed7aa; }"
     ".schedule-table td { padding: 9px 8px; color: #431407; border: 1px solid #fed7aa; font-weight: 500; }"
@@ -166,7 +167,7 @@ if not st.session_state.logged_in:
 current_student = st.session_state.student_row
 
 header_html = (
-    "<div style='text-align: center; background-color: rgba(255, 255, 255, 0.9); padding: 16px; border-radius: 16px; border: 1px solid #fed7aa; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.08);'>"
+    "<div style='text-align: center; background-color: rgba(255, 255, 255, 0.95); padding: 16px; border-radius: 16px; border: 1px solid #fdba74; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.08);'>"
     f"{logo_header_html}"
     "<h3 style='color: #c2410c; margin: 0;'>كلية علوم الحاسوب والرياضيات</h3>"
     "</div>"
@@ -234,7 +235,7 @@ for row in range(2):
             st.metric(label=title, value=f"{days} / 7 أيام")
             st.markdown(f"<p style='text-align: center; font-size: 13px; color: #c2410c; font-weight: bold; margin-top: -12px; margin-bottom: 6px;'>👨‍🏫 {prof_name}</p>", unsafe_allow_html=True)
             st.progress(progress_val)
-            st.markdown(f"<p style='text-align: center; font-size: 12px; margin-top: -10px; color: #7c2d12;'>{status}</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='text-align: center; font-size: 12px; margin-top: -10px; color: #7c2d12; font-weight: 600;'>{status}</p>", unsafe_allow_html=True)
 
 if not df_schedule.empty:
     with st.expander("📅 عرض الجدول الأسبوعي للمحاضرات"):
