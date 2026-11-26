@@ -25,7 +25,6 @@ def get_logo_html(image_path="logo.png", width="85px"):
 logo_login_html = get_logo_html("logo.png", "95px")
 logo_header_html = get_logo_html("logo.png", "65px")
 
-# 🎨 الخيار الثاني: خلفية الغروب الدافئ الناعم (تدرج أبيض دافئ إلى مشمشي فاتح سادة)
 css_style = (
     "<style>"
     ".stApp { background: linear-gradient(180deg, #ffffff 0%, #fff7ed 50%, #ffedd5 100%) !important; }"
@@ -39,10 +38,19 @@ css_style = (
     ".assistant .bubble a { display: inline-block; margin-top: 6px; margin-bottom: 4px; padding: 6px 14px; background-color: #fff7ed; color: #c2410c !important; text-decoration: none; border-radius: 8px; font-weight: bold; border: 1px solid #fed7aa; }"
     ".user .bubble { background-color: #ffffff !important; color: #1f2937 !important; border: 1px solid #fed7aa !important; border-bottom-right-radius: 4px; box-shadow: 0 2px 8px rgba(234, 88, 12, 0.08); }"
     "div[data-testid='stTextInput'] input { background-color: #ffffff !important; color: #1f2937 !important; border: 1px solid #fdba74 !important; border-radius: 10px !important; }"
-    "div[data-testid='stMetric'] { background-color: rgba(255, 255, 255, 0.85) !important; border: 1px solid #fed7aa !important; padding: 15px !important; border-radius: 14px !important; text-align: center !important; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.06); }"
+    "div[data-testid='stMetric'] { background-color: rgba(255, 255, 255, 0.9) !important; border: 1px solid #fed7aa !important; padding: 15px !important; border-radius: 14px !important; text-align: center !important; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.06); }"
     "div[data-testid='stMetricLabel'] { color: #7c2d12 !important; font-size: 14px !important; font-weight: bold !important; }"
     "div[data-testid='stMetricValue'] { color: #ea580c !important; font-size: 22px !important; font-weight: bold !important; }"
     "div[data-testid='stTextInput'] label p { color: #7c2d12 !important; font-weight: bold !important; }"
+    "div[data-testid='stExpander'] { background-color: #ffffff !important; border: 1px solid #fdba74 !important; border-radius: 12px !important; box-shadow: 0 3px 10px rgba(234, 88, 12, 0.08) !important; }"
+    "div[data-testid='stExpander'] summary { color: #9a3412 !important; font-weight: bold !important; font-size: 16px !important; }"
+    "div[data-testid='stExpander'] summary p { color: #9a3412 !important; font-weight: bold !important; }"
+    "div[data-testid='stExpander'] summary svg { fill: #c2410c !important; }"
+    ".schedule-table { width: 100%; border-collapse: collapse; direction: rtl; text-align: center; font-size: 14px; border-radius: 10px; overflow: hidden; }"
+    ".schedule-table th { background-color: #ea580c; color: #ffffff; padding: 10px 8px; font-weight: bold; border: 1px solid #fed7aa; }"
+    ".schedule-table td { padding: 9px 8px; color: #431407; border: 1px solid #fed7aa; font-weight: 500; }"
+    ".schedule-table tr:nth-child(even) { background-color: #fff7ed; }"
+    ".schedule-table tr:nth-child(odd) { background-color: #ffffff; }"
     "</style>"
 )
 st.markdown(css_style, unsafe_allow_html=True)
@@ -158,7 +166,7 @@ if not st.session_state.logged_in:
 current_student = st.session_state.student_row
 
 header_html = (
-    "<div style='text-align: center; background-color: rgba(255, 255, 255, 0.85); padding: 16px; border-radius: 16px; border: 1px solid #fed7aa; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.08);'>"
+    "<div style='text-align: center; background-color: rgba(255, 255, 255, 0.9); padding: 16px; border-radius: 16px; border: 1px solid #fed7aa; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.08);'>"
     f"{logo_header_html}"
     "<h3 style='color: #c2410c; margin: 0;'>كلية علوم الحاسوب والرياضيات</h3>"
     "</div>"
@@ -230,13 +238,15 @@ for row in range(2):
 
 if not df_schedule.empty:
     with st.expander("📅 عرض الجدول الأسبوعي للمحاضرات"):
-        display_df = df_schedule.rename(columns={
-            "day": "اليوم",
-            "time": "الوقت",
-            "subject_name": "المادة",
-            "hall": "القاعة"
-        })
-        st.dataframe(display_df, use_container_width=True, hide_index=True)
+        table_html = "<table class='schedule-table'><thead><tr><th>اليوم</th><th>الوقت</th><th>المادة</th><th>القاعة</th></tr></thead><tbody>"
+        for _, r in df_schedule.iterrows():
+            day_val = html.escape(str(r.get("day", "-")).strip())
+            time_val = html.escape(str(r.get("time", "-")).strip())
+            subj_val = html.escape(str(r.get("subject_name", "-")).strip())
+            hall_val = html.escape(str(r.get("hall", "-")).strip())
+            table_html += f"<tr><td>{day_val}</td><td>{time_val}</td><td>{subj_val}</td><td>{hall_val}</td></tr>"
+        table_html += "</tbody></table>"
+        st.markdown(table_html, unsafe_allow_html=True)
 
 st.markdown("---")
 
