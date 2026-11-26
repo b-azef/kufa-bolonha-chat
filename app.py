@@ -27,22 +27,24 @@ logo_header_html = get_logo_html("logo.png", "65px")
 
 css_style = (
     "<style>"
-    ".stApp { background: radial-gradient(circle at top, #2c1810 0%, #160e0a 55%, #0e0907 100%) !important; }"
+    ".stApp { background-color: #fff8f1 !important; background-image: radial-gradient(#fdba74 1px, transparent 1px), radial-gradient(#fdba74 1px, #fff8f1 1px) !important; background-size: 32px 32px !important; background-position: 0 0, 16px 16px !important; }"
     "header { visibility: hidden !important; }"
     ".chat-box { display: flex; flex-direction: column; gap: 15px; padding: 20px; background: transparent !important; }"
     ".msg-wrapper { display: flex; width: 100%; }"
     ".msg-wrapper.assistant { justify-content: flex-end; }"
     ".msg-wrapper.user { justify-content: flex-start; }"
-    ".bubble { padding: 14px 18px; border-radius: 18px; font-size: 16px; max-width: 82%; color: white; line-height: 1.6; }"
-    ".assistant .bubble { background: linear-gradient(135deg, #f59e0b 0%, #ea580c 50%, #b91c1c 100%) !important; border-bottom-left-radius: 4px; box-shadow: 0 4px 15px rgba(234, 88, 12, 0.35); }"
-    ".assistant .bubble a { display: inline-block; margin-top: 6px; margin-bottom: 4px; padding: 6px 14px; background-color: #1c1008; color: #fbbf24 !important; text-decoration: none; border-radius: 8px; font-weight: bold; border: 1px solid #fbbf24; }"
-    ".user .bubble { background-color: rgba(45, 28, 20, 0.85) !important; border: 1px solid #573322 !important; border-bottom-right-radius: 4px; backdrop-filter: blur(6px); }"
-    "div[data-testid='stTextInput'] input { background-color: rgba(30, 19, 14, 0.9) !important; color: white !important; border: 1px solid #573322 !important; border-radius: 10px !important; }"
-    "div[data-testid='stMetric'] { background-color: rgba(32, 20, 14, 0.75) !important; border: 1px solid #452718 !important; padding: 15px !important; border-radius: 14px !important; text-align: center !important; backdrop-filter: blur(6px); }"
-    "div[data-testid='stMetricLabel'] { color: #e2cfc4 !important; font-size: 14px !important; }"
-    "div[data-testid='stMetricValue'] { color: #ffffff !important; font-size: 22px !important; font-weight: bold !important; }"
+    ".bubble { padding: 14px 18px; border-radius: 18px; font-size: 16px; max-width: 82%; line-height: 1.6; }"
+    ".assistant .bubble { background: linear-gradient(135deg, #f59e0b 0%, #ea580c 60%, #c2410c 100%) !important; color: white !important; border-bottom-left-radius: 4px; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25); }"
+    ".assistant .bubble a { display: inline-block; margin-top: 6px; margin-bottom: 4px; padding: 6px 14px; background-color: #fff7ed; color: #c2410c !important; text-decoration: none; border-radius: 8px; font-weight: bold; border: 1px solid #fed7aa; }"
+    ".user .bubble { background-color: #ffffff !important; color: #1f2937 !important; border: 1px solid #fed7aa !important; border-bottom-right-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }"
+    "div[data-testid='stTextInput'] input { background-color: #ffffff !important; color: #1f2937 !important; border: 1px solid #fdba74 !important; border-radius: 10px !important; }"
+    "div[data-testid='stMetric'] { background-color: rgba(255, 255, 255, 0.9) !important; border: 1px solid #fed7aa !important; padding: 15px !important; border-radius: 14px !important; text-align: center !important; box-shadow: 0 4px 10px rgba(234, 88, 12, 0.06); }"
+    "div[data-testid='stMetricLabel'] { color: #7c2d12 !important; font-size: 14px !important; font-weight: bold !important; }"
+    "div[data-testid='stMetricValue'] { color: #ea580c !important; font-size: 22px !important; font-weight: bold !important; }"
+    "h1, h2, h3, h4, p, label { color: #431407 !important; }"
     "</style>"
 )
+
 st.markdown(css_style, unsafe_allow_html=True)
 
 if "GEMINI_API_KEY" in st.secrets:
