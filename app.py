@@ -2,6 +2,7 @@ import base64
 import html
 import os
 import re
+import time
 import urllib.parse
 from google import genai
 import pandas as pd
@@ -45,6 +46,7 @@ css_style = (
     "div[data-testid='stExpander'] { background-color: #ffffff !important; border: 1px solid #fdba74 !important; border-radius: 12px !important; box-shadow: 0 3px 10px rgba(234, 88, 12, 0.08) !important; }"
     "div[data-testid='stExpander'] summary, div[data-testid='stExpander'] summary * { color: #9a3412 !important; font-weight: bold !important; font-size: 16px !important; }"
     "div[data-testid='stExpander'] summary svg { fill: #c2410c !important; }"
+    "div[data-testid='stSpinner'], div[data-testid='stSpinner'] * { color: #000000 !important; font-weight: bold !important; }"
     ".stButton button { background-color: #ea580c !important; color: #ffffff !important; border: none !important; border-radius: 10px !important; font-weight: bold !important; }"
     ".stButton button:hover { background-color: #c2410c !important; color: #ffffff !important; }"
     ".schedule-table { width: 100%; border-collapse: collapse; direction: rtl; text-align: center; font-size: 14px; border-radius: 10px; overflow: hidden; }"
@@ -279,6 +281,23 @@ def format_safe_message(text):
     )
 
 
+def generate_reply_with_fallback(prompt_text):
+    models_to_try = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
+    for model_name in models_to_try:
+        for attempt in range(2):
+            try:
+                return client.models.generate_content(
+                    model=model_name, contents=prompt_text
+                ).text
+            except Exception as err:
+                err_str = str(err)
+                if "503" in err_str or "UNAVAILABLE" in err_str or "429" in err_str:
+                    time.sleep(1.2)
+                    continue
+                raise err
+    return "عذراً، يوجد ضغط مؤقت على الخادم حالياً. يرجى إعادة إرسال سؤالك بعد لحظات قليلة."
+
+
 if isinstance(st.session_state.chat_history, list):
     chat_html = '<div class="chat-box">'
     for msg in st.session_state.chat_history:
@@ -311,10 +330,8 @@ if user_query := st.chat_input("اسأل عن درجاتك، غياباتك، ا
 
     with st.spinner("🤖 جاري التفكير والكتابة..."):
         try:
-            reply = client.models.generate_content(
-                model="gemini-2.5-flash", contents=chat_prompt
-            ).text
+            reply = generate_reply_with_fallback(chat_prompt)
             st.session_state.chat_history.append({"role": "assistant", "content": reply})
             st.rerun()
         except Exception as e:
-            st.error(f"خطأ في الاتصال: {e}")
+            st.error(f"حدث خطأ غير متوقع: {e}")
